@@ -21,6 +21,8 @@ public partial class App : Application
     private VencordRepairService _repairService = null!;
     private NotificationService _notificationService = null!;
 
+    private bool _repairInProgress;
+
     public App()
     {
         DispatcherUnhandledException += App_DispatcherUnhandledException;
@@ -124,6 +126,38 @@ public partial class App : Application
         base.OnExit(e);
     }
 
+    public bool TryBeginRepair()
+    {
+        if (_repairInProgress)
+        {
+            return false;
+        }
+
+        _repairInProgress = true;
+        return true;
+    }
+
+    public void CompleteRepair(bool success)
+    {
+        _repairInProgress = false;
+
+        if (!success)
+        {
+            return;
+        }
+
+        _mainWindow?.UpdateDiscordStatus(
+            new DiscordStatus(
+                true,
+                true,
+                null));
+
+        if (_config?.LaunchDiscordAfterPatch == true)
+        {
+            _discordLauncher.Launch();
+        }
+    }
+
     private void Notification_Activated(
         object? sender,
         string arguments)
@@ -153,6 +187,11 @@ public partial class App : Application
             DispatcherPriority.Normal,
             new Action(() =>
             {
+                if (_repairInProgress)
+                {
+                    return;
+                }
+
                 ShowMainWindow();
                 _mainWindow?.RequestRepair();
             }));
@@ -166,30 +205,16 @@ public partial class App : Application
         {
             _mainWindow?.UpdateDiscordStatus(status);
 
+            if (_repairInProgress)
+            {
+                return;
+            }
+
             if (status.IsInstalled && !status.IsVencordPatched)
             {
                 _notificationService.ShowRepairNeeded();
             }
         });
-    }
-
-    public void HandleRepairCompleted(bool success)
-    {
-        if (!success)
-        {
-            return;
-        }
-
-        _mainWindow?.UpdateDiscordStatus(
-            new DiscordStatus(
-                true,
-                true,
-                null));
-
-        if (_config?.LaunchDiscordAfterPatch == true)
-        {
-            _discordLauncher.Launch();
-        }
     }
 
     private void ShowMainWindow()

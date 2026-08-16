@@ -29,61 +29,20 @@ public partial class MainWindow : Window
         RepairButton_Click(this, new RoutedEventArgs());
     }
 
-    private void SetRepairProgress(
-        bool active,
-        string message)
-    {
-        RepairProgressBar.Visibility = active
-            ? Visibility.Visible
-            : Visibility.Collapsed;
-
-        ProgressText.Visibility = active
-            ? Visibility.Visible
-            : Visibility.Collapsed;
-
-        ProgressText.Text = message;
-
-        RepairButton.IsEnabled = !active;
-    }
-
-    private void TitleBar_MouseLeftButtonDown(
-        object sender,
-        MouseButtonEventArgs e)
-    {
-        if (e.ClickCount == 2)
-        {
-            ToggleMaximize();
-            return;
-        }
-
-        DragMove();
-    }
-
-    private void MinimizeButton_Click(
-        object sender,
-        RoutedEventArgs e)
-    {
-        Hide();
-    }
-
-    private void MaximizeButton_Click(
-        object sender,
-        RoutedEventArgs e)
-    {
-        ToggleMaximize();
-    }
-
-    private void CloseButton_Click(
-        object sender,
-        RoutedEventArgs e)
-    {
-        Hide();
-    }
-
     private async void RepairButton_Click(
         object sender,
         RoutedEventArgs e)
     {
+        if (Application.Current is not App app)
+        {
+            return;
+        }
+
+        if (!app.TryBeginRepair())
+        {
+            return;
+        }
+
         try
         {
             if (_repairService.IsDiscordRunning())
@@ -143,10 +102,7 @@ public partial class MainWindow : Window
             StatusText.Text = "Vencord is patched";
             ProgressText.Text = "Repair completed successfully.";
 
-            if (Application.Current is App app)
-            {
-                app.HandleRepairCompleted(true);
-            }
+            app.CompleteRepair(true);
         }
         catch (Exception ex)
         {
@@ -160,10 +116,46 @@ public partial class MainWindow : Window
         }
         finally
         {
+            app.CompleteRepair(false);
+
             RepairProgressBar.Visibility = Visibility.Collapsed;
             ProgressText.Visibility = Visibility.Collapsed;
             RepairButton.IsEnabled = true;
         }
+    }
+
+    private void TitleBar_MouseLeftButtonDown(
+        object sender,
+        MouseButtonEventArgs e)
+    {
+        if (e.ClickCount == 2)
+        {
+            ToggleMaximize();
+            return;
+        }
+
+        DragMove();
+    }
+
+    private void MinimizeButton_Click(
+        object sender,
+        RoutedEventArgs e)
+    {
+        Hide();
+    }
+
+    private void MaximizeButton_Click(
+        object sender,
+        RoutedEventArgs e)
+    {
+        ToggleMaximize();
+    }
+
+    private void CloseButton_Click(
+        object sender,
+        RoutedEventArgs e)
+    {
+        Hide();
     }
 
     private void ToggleMaximize()
