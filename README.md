@@ -1,685 +1,183 @@
 # Venguard
 
-Venguard is a lightweight Windows utility for keeping a Discord installation healthy.
-
-It monitors Discord for common problems, helps repair Vencord-related issues, and gives you control over when checks happen, what gets repaired, and how Venguard behaves in the background.
-
-> **Windows only · .NET 8 · WPF**
-
----
+Venguard is a Windows utility for maintaining Vencord installations. It monitors Discord, detects when Vencord has been corrupted or removed, and can automatically repair the installation using the official Vencord installer.
 
 ## Features
 
-* **Discord monitoring**
-
-  * Periodically checks your Discord installation for problems.
-  * Configurable check interval.
-  * Optional background monitoring.
-  * Can keep running in the system tray.
-
-* **Vencord repair**
-
-  * Detects problems with a Discord/Vencord installation.
-  * Runs the repair process through the Vencord installer.
-  * Optional confirmation before repairs.
-  * Optional automatic Discord launch after a successful repair.
-
-* **OpenAsar support**
-
-  * Enable or disable OpenAsar from the settings window.
-  * Uses the Vencord installer for the installation/removal process.
-  * Checks that Discord is closed before changing the installation.
-
-* **System tray integration**
-
-  * Run Venguard without keeping the main window open.
-  * Minimize to tray.
-  * Close to tray.
-  * Access important actions without reopening the main window.
-
-* **Windows startup**
-
-  * Start Venguard automatically with Windows.
-  * Optionally start minimized.
-
-* **Notifications**
-
-  * Enable or disable Venguard notifications.
-  * Separate notifications for successful and failed repairs.
-
-* **First-run setup**
-
-  * Simple first-run experience for configuring Venguard.
-
----
-
-## Screenshots
-
-Screenshots can be added here as the UI develops.
-
-```text
-screenshots/
-├── main-window.png
-├── settings.png
-├── tray.png
-└── first-run.png
-```
-
----
+- **Background monitoring**: Periodically checks Discord and Vencord status with configurable intervals
+- **Automatic repair**: Can run repairs automatically when problems are detected, or on-demand through the UI
+- **OpenAsar management**: Optionally install or remove OpenAsar during repairs
+- **System tray**: Minimizes to the system tray and can run in the background
+- **Notifications**: Send toast notifications for repair events
+- **Windows startup integration**: Optionally launch with Windows and start minimized
+- **First-run setup**: Wizard guides initial configuration
+- **Configurable behavior**: Extensive settings for notifications, auto-launch, tray behavior, and monitoring
 
 ## Requirements
 
-### Operating system
+- Windows 10 version 19041 or later
+- .NET 8 Desktop Runtime
 
-* Windows 10 version 19041 or newer
-* Windows 11
+## Building
 
-### Runtime
+Clone the repository and build with .NET CLI:
 
-The project targets:
-
-```text
-.NET 8
+```bash
+dotnet build Venguard.csproj
 ```
 
-The application uses WPF and targets:
+Or with Visual Studio 2022+:
 
-```text
-net8.0-windows10.0.19041.0
+```bash
+dotnet build Venguard.csproj
 ```
 
-A compatible .NET 8 installation is required when running the project directly.
+For a release build:
 
----
+```bash
+dotnet publish Venguard.csproj --configuration Release --self-contained
+```
 
-## Installation
+## Running
 
-### Download a release
+After building:
 
-The easiest way to use Venguard is to download the latest release from the project's Releases page.
+```bash
+dotnet run --project Venguard.csproj
+```
 
-Extract the application and run:
+Or launch the compiled executable directly:
 
-```text
+```bash
 Venguard.exe
 ```
 
-No separate Discord installation or configuration file needs to be created manually.
+## Configuration
 
-### Build from source
+Venguard stores its configuration as JSON in the local application data directory. The first time you run it, a wizard will guide you through initial setup.
 
-Clone the repository:
+### Configuration Options
 
-```powershell
-git clone https://github.com/yourusername/Venguard.git
-cd Venguard
-```
+| Setting | Default | Purpose |
+|---------|---------|---------|
+| `AutoStart` | true | Start with Windows |
+| `StartMinimized` | false | Launch in minimized state |
+| `MinimizeToTray` | true | Minimize button hides to tray instead of taskbar |
+| `CloseToTray` | true | Close button hides to tray instead of exiting |
+| `LaunchDiscordAfterPatch` | true | Automatically launch Discord after repair succeeds |
+| `UseOpenAsar` | true | Install/use OpenAsar during repair |
+| `ConfirmBeforeRepair` | true | Show confirmation dialog before starting repairs |
+| `EnableNotifications` | true | Send toast notifications |
+| `NotifyOnRepairSuccess` | true | Notify when repairs complete successfully |
+| `NotifyOnRepairFailure` | true | Notify when repairs fail |
+| `EnableBackgroundMonitoring` | true | Continuously monitor Discord status |
+| `MonitorIntervalSeconds` | 10 | Check Discord status every N seconds (minimum 5) |
 
-Build the project:
+## How it works
 
-```powershell
-dotnet build .\Venguard\Venguard.csproj
-```
-
-Run it with:
-
-```powershell
-dotnet run --project .\Venguard\Venguard.csproj
-```
-
-The executable will be located under:
-
-```text
-Venguard\bin\Debug\net8.0-windows10.0.19041.0\
-```
-
----
-
-## Project structure
-
-```text
-Venguard/
-│
-├── Venguard/
-│   ├── Assets/
-│   │   ├── Venguard.ico
-│   │   └── VenguardLogo.png
-│   │
-│   ├── Config/
-│   │   └── VenguardConfig.cs
-│   │
-│   ├── Resources/
-│   │
-│   ├── Services/
-│   │   ├── DiscordMonitor.cs
-│   │   ├── DiscordService.cs
-│   │   ├── OpenAsarService.cs
-│   │   ├── VencordInstallerManager.cs
-│   │   └── VencordInstallerService.cs
-│   │
-│   ├── App.xaml
-│   ├── App.xaml.cs
-│   │
-│   ├── FirstRunWindow.xaml
-│   ├── FirstRunWindow.xaml.cs
-│   │
-│   ├── MainWindow.xaml
-│   ├── MainWindow.xaml.cs
-│   │
-│   ├── SettingsWindow.xaml
-│   ├── SettingsWindow.xaml.cs
-│   │
-│   ├── Venguard.csproj
-│   └── AssemblyInfo.cs
-│
-└── README.md
-```
-
----
-
-## Settings
-
-Venguard exposes most of its behaviour through the Settings window.
-
-### General
-
-| Setting                     | Description                                                        |
-| --------------------------- | ------------------------------------------------------------------ |
-| Start Venguard with Windows | Launches Venguard automatically when Windows starts                |
-| Start Venguard minimized    | Starts without opening the main window                             |
-| Minimize to tray            | Keeps Venguard running when minimized                              |
-| Close to tray               | Keeps Venguard running when the window is closed                   |
-| Background monitoring       | Allows Venguard to monitor Discord while running in the background |
+Venguard operates by continuously monitoring your Discord installation for signs that Vencord has been corrupted or removed. When a problem is detected, it can either notify you or automatically trigger a repair.
 
 ### Monitoring
 
-The monitoring interval can be configured to suit your setup.
+The `DiscordMonitor` runs a timer at your configured interval and checks:
 
-Available intervals include:
+- Whether Discord is installed
+- Whether Vencord's patch file exists (at `resources/_app.asar`)
+- Whether OpenAsar is currently in use
 
-```text
-5 seconds
-10 seconds
-15 seconds
-30 seconds
-1 minute
-2 minutes
-5 minutes
+When the status changes, it notifies the UI and can trigger background actions based on your settings.
+
+### Repair Process
+
+The `VencordRepairService` orchestrates repairs:
+
+1. Locates the Discord installation (looks for `app-*` directories in `%LocalAppData%\Discord`)
+2. Downloads the official Vencord installer (if needed)
+3. Runs the installer with `--repair --location <discord-path>`
+4. Conditionally installs or removes OpenAsar depending on settings
+5. Optionally launches Discord when complete
+
+The repair runs in a separate process and can be cancelled at any time.
+
+## Project structure
+
+```
+Venguard/
+├── Assets/
+│   ├── Venguard.ico
+│   └── VenguardLogo.png
+│
+├── Config/
+│   ├── ConfigService.cs          # Loads/saves configuration to JSON
+│   └── VenguardConfig.cs          # Configuration model
+│
+├── Services/
+│   ├── DiscordInstallation.cs     # Represents a Discord installation path
+│   ├── DiscordLauncherService.cs  # Launches Discord.exe
+│   ├── DiscordMonitor.cs          # Timer-based status monitoring
+│   ├── DiscordService.cs          # Detects Discord installation and status
+│   ├── DiscordStatus.cs           # Status record (installed, patched, OpenAsar)
+│   ├── NotificationService.cs     # Sends toast notifications
+│   ├── OpenAsarService.cs         # Manages OpenAsar installation
+│   ├── StartupService.cs          # Manages Windows startup registry entries
+│   ├── VencordInstallerDownloader.cs    # Downloads installer from GitHub
+│   ├── VencordInstallerManager.cs       # Caches and manages installer
+│   ├── VencordInstallerService.cs       # Runs the installer process
+│   └── VencordRepairService.cs          # Orchestrates the full repair flow
+│
+├── App.xaml              # Application resources and styling
+├── App.xaml.cs           # Application startup and service initialization
+├── FirstRunWindow.xaml   # First-run wizard UI
+├── MainWindow.xaml       # Main application window
+├── MainWindow.xaml.cs    # Main window logic and UI event handlers
+└── Venguard.csproj       # Project file
 ```
 
-Background monitoring can also be disabled entirely.
+### Key Services
 
-When disabled, Venguard will not continuously monitor Discord in the background.
+**DiscordService**: Locates the Discord installation by looking in `%LocalAppData%\Discord` for version folders matching `app-*`. It checks the `resources` directory for both the original `app.asar` and Vencord's `_app.asar` patch file to determine if Vencord is installed. It also detects OpenAsar by reading the .asar files and checking for the "OpenAsar" string.
 
-### Repair
+**DiscordMonitor**: Runs a timer at the configured interval and calls `DiscordService.GetStatus()` repeatedly. When the status changes, it raises the `StatusChanged` event, which the UI listens to for updates.
 
-You can control what happens after a repair:
+**VencordRepairService**: The main repair orchestrator. It gets the Discord installation, downloads the Vencord installer, runs it with the `--repair` flag, and then conditionally manages OpenAsar based on settings.
 
-* Launch Discord after a successful repair
-* Ask for confirmation before repairing
-* Use OpenAsar when available
+**VencordInstallerManager**: Caches the downloaded Vencord installer to avoid re-downloading it on every repair. The installer is fetched from the official Vencord GitHub releases.
 
-### Notifications
+**NotificationService**: Sends Windows toast notifications using the Windows Toast Notification API. The notifications appear in the system notification center.
 
-Notifications can be controlled globally, with separate settings for:
-
-* Successful repairs
-* Failed repairs
-
----
-
-## How Venguard works
-
-Venguard is designed around a small number of services rather than putting all of the application logic inside the UI.
-
-A simplified flow looks like this:
-
-```text
-                 ┌──────────────────┐
-                 │     Venguard     │
-                 └────────┬─────────┘
-                          │
-                          ▼
-                 ┌──────────────────┐
-                 │ Discord Monitor  │
-                 └────────┬─────────┘
-                          │
-                    Problem found?
-                     ┌────┴────┐
-                    No         Yes
-                    │           │
-                    ▼           ▼
-                 Continue    Repair
-                                │
-                                ▼
-                     ┌──────────────────┐
-                     │ Vencord Installer│
-                     └────────┬─────────┘
-                              │
-                              ▼
-                         Verification
-                              │
-                    ┌─────────┴─────────┐
-                    ▼                   ▼
-                 Success              Failure
-                    │                   │
-                    ▼                   ▼
-               Notification        Notification
-                    │
-                    ▼
-             Launch Discord
-```
-
-The exact repair process depends on the detected state of the Discord installation.
-
----
-
-## System tray
-
-Venguard can run without keeping its main window open.
-
-Depending on your settings:
-
-* Minimizing the window can send Venguard to the tray.
-* Closing the window can send Venguard to the tray.
-* Venguard can continue monitoring while hidden.
-* The tray icon can be used to access the application again.
-
-This makes it possible to leave Venguard running without having another window taking up space on your desktop.
-
----
-
-## Configuration
-
-Venguard stores its configuration using the `VenguardConfig` model.
-
-Current configuration options include:
-
-```csharp
-public bool IsFirstRun { get; set; }
-
-public bool AutoStart { get; set; }
-
-public bool StartMinimized { get; set; }
-
-public bool MinimizeToTray { get; set; }
-
-public bool CloseToTray { get; set; }
-
-public bool LaunchDiscordAfterPatch { get; set; }
-
-public bool UseOpenAsar { get; set; }
-
-public bool ConfirmBeforeRepair { get; set; }
-
-public bool EnableNotifications { get; set; }
-
-public bool NotifyOnRepairSuccess { get; set; }
-
-public bool NotifyOnRepairFailure { get; set; }
-
-public int MonitorIntervalSeconds { get; set; }
-```
-
-The defaults are intended to provide a sensible first-run experience while still allowing advanced users to change Venguard's behaviour.
-
----
-
-## Dependencies
-
-Venguard currently uses:
-
-* **WPF** for the desktop interface
-* **.NET 8** as the application framework
-* **Hardcodet.NotifyIcon.Wpf** for system tray functionality
-* **Windowstoastapi** for Windows notifications
-* **Vencord's installer** for supported installation and repair operations
-
-NuGet dependencies are defined in:
-
-```text
-Venguard/Venguard.csproj
-```
-
----
+**StartupService**: Manages the Windows registry entry in `HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Run` to enable/disable autostart.
 
 ## Development
 
-### Clone the repository
+The application uses:
 
-```powershell
-git clone https://github.com/yourusername/Venguard.git
-cd Venguard
-```
+- **WPF** for the UI with custom styling (no standard Windows theme)
+- **Hardcodet.NotifyIcon.Wpf** for system tray functionality
+- **Windowstoastapi** for toast notifications
+- **Dependency injection**: Services are manually instantiated in `App.xaml.cs` and passed to windows
 
-### Restore dependencies
-
-```powershell
-dotnet restore .\Venguard\Venguard.csproj
-```
-
-### Build
-
-```powershell
-dotnet build .\Venguard\Venguard.csproj
-```
-
-### Run
-
-```powershell
-dotnet run --project .\Venguard\Venguard.csproj
-```
-
-### Clean the project
-
-If stale WPF build files cause unexpected behaviour:
-
-```powershell
-dotnet clean .\Venguard\Venguard.csproj
-```
-
-You can also remove the generated build directories:
-
-```powershell
-Remove-Item .\Venguard\bin -Recurse -Force -ErrorAction SilentlyContinue
-Remove-Item .\Venguard\obj -Recurse -Force -ErrorAction SilentlyContinue
-```
-
-Then rebuild:
-
-```powershell
-dotnet build .\Venguard\Venguard.csproj
-```
-
----
-
-## Why WPF?
-
-Venguard is a Windows-only application, so WPF provides a good fit for the project.
-
-It gives the application:
-
-* Native Windows integration
-* System tray support
-* Windows notification support
-* Flexible XAML-based UI
-* Straightforward .NET integration
-* Good support for custom window chrome and themes
-
-The UI intentionally avoids looking like a default WPF application and uses a dark, modern interface.
-
----
-
-## Design goals
-
-Venguard is intended to stay:
-
-### Simple
-
-The application should be understandable without reading documentation.
-
-### Quiet
-
-When everything is working, Venguard should stay out of the way.
-
-### Safe
-
-Repairs should avoid making unnecessary changes to a user's Discord installation.
-
-### Transparent
-
-Important actions should be visible and understandable rather than hidden behind unexplained automation.
-
-### Lightweight
-
-Monitoring should not require a large application footprint or unnecessary background activity.
-
----
-
-## Roadmap
-
-Potential future improvements include:
-
-* [ ] More detailed Discord health checks
-* [ ] Repair history
-* [ ] Repair logs
-* [ ] Exportable diagnostic reports
-* [ ] Improved tray menu
-* [ ] More granular monitoring controls
-* [ ] Automatic detection of Discord installation changes
-* [ ] Multiple Discord installation support
-* [ ] Better repair progress information
-* [ ] More detailed error reporting
-* [ ] Optional scheduled health checks
-* [ ] Portable mode
-* [ ] Automatic update support
-* [ ] Improved accessibility
-* [ ] More UI customization
-* [ ] Installer/package distribution
-* [ ] Release builds and signed binaries
-
-The roadmap is intentionally flexible. Features should only be added when they provide a meaningful improvement to the application.
-
----
+When adding new features, follow the existing pattern: create a service class in the `Services` folder, initialize it in `App.OnStartup()`, and inject it into the windows that need it.
 
 ## Troubleshooting
 
-### The application builds but an old UI appears
+**Discord not found**: Venguard looks for Discord in `%LocalAppData%\Discord`. Ensure Discord is installed in the default location.
 
-Make sure you're running the project you just built:
+**Repair keeps failing**: Check that the official Vencord installer works standalone. Verify your Discord installation isn't corrupted beyond what Vencord can repair.
 
-```powershell
-dotnet run --project .\Venguard\Venguard.csproj
-```
+**Settings not saving**: Venguard stores configuration in the application data directory. Ensure you have write permissions to `%LocalAppData%\Venguard\`.
 
-If necessary, clean the project first:
-
-```powershell
-dotnet clean .\Venguard\Venguard.csproj
-
-Remove-Item .\Venguard\bin -Recurse -Force -ErrorAction SilentlyContinue
-Remove-Item .\Venguard\obj -Recurse -Force -ErrorAction SilentlyContinue
-
-dotnet build .\Venguard\Venguard.csproj
-dotnet run --project .\Venguard\Venguard.csproj
-```
-
-### The settings window does not reflect XAML changes
-
-Verify that the XAML file exists and is not empty:
-
-```powershell
-Get-Item .\Venguard\SettingsWindow.xaml |
-    Select-Object FullName, Length, LastWriteTime
-```
-
-You should see a non-zero file size.
-
-You can also verify that the expected XAML is present:
-
-```powershell
-Select-String `
-    -Path .\Venguard\SettingsWindow.xaml `
-    -Pattern "IntervalComboBox"
-```
-
-### The project says a file does not exist
-
-The project file is located at:
-
-```text
-Venguard\Venguard.csproj
-```
-
-From the repository root, use:
-
-```powershell
-dotnet run --project .\Venguard\Venguard.csproj
-```
-
-Do not add a trailing `\` to the `.csproj` path.
-
-Correct:
-
-```powershell
-dotnet run --project .\Venguard\Venguard.csproj
-```
-
-Incorrect:
-
-```powershell
-dotnet run --project .\Venguard\Venguard.csproj\
-```
-
-### XAML reports that a resource cannot be found
-
-WPF resources are case-sensitive.
-
-For example:
-
-```text
-VenguardLogoStyle
-```
-
-is different from:
-
-```text
-VenguardLogostyle
-```
-
-Check that the resource exists and that the key matches exactly.
-
----
+**Background monitoring not working**: Verify `EnableBackgroundMonitoring` is enabled in settings. Check that the monitoring interval is at least 5 seconds.
 
 ## Contributing
 
-Contributions are welcome.
+Contributions are welcome. When submitting changes:
 
-Before opening a pull request:
-
-1. Build the project.
-2. Make sure the application starts.
-3. Test the affected feature manually.
-4. Check that existing settings still work.
-5. Keep unrelated changes out of the pull request.
-
-For larger changes, opening an issue first is recommended so the approach can be discussed before implementation.
-
----
-
-## Code style
-
-Venguard follows standard C# conventions where practical.
-
-In particular:
-
-* Nullable reference types are enabled.
-* Classes and public members use clear names.
-* UI code stays in the WPF layer where possible.
-* Application logic is separated into services.
-* Configuration is represented by a dedicated model.
-* Exceptions should be handled at appropriate application boundaries.
-
-The goal is maintainable code rather than excessive abstraction.
-
----
-
-## Security and privacy
-
-Venguard is intended to operate locally on the user's Windows machine.
-
-The application interacts with local Discord files and processes as required for its monitoring and repair functionality.
-
-Users should review the source code before building or running modified versions of the application.
-
-Do not run unofficial builds from untrusted sources with administrator privileges unless you understand what they do.
-
----
-
-## Disclaimer
-
-Venguard is an independent project.
-
-It is not affiliated with, endorsed by, or sponsored by Discord or Vencord unless explicitly stated by the project maintainers.
-
-Discord and Vencord are trademarks of their respective owners.
-
----
+- Keep the code style consistent with the existing project
+- Add services for new functionality rather than adding to existing classes
+- Test with an actual Discord/Vencord installation
+- Update the configuration model in `VenguardConfig.cs` if adding new settings
+- Update configuration loading/saving in `ConfigService.cs` if needed
 
 ## License
 
-Add the project's license here.
-
-For example:
-
-```text
-MIT License
-```
-
-If the project is released under the MIT License, include the full `LICENSE` file in the repository.
-
----
-
-## Acknowledgements
-
-Venguard would not exist without the work of the projects and communities it builds around.
-
-Thanks to:
-
-* The **Vencord** project and its contributors
-* The **Discord** community
-* The **.NET** and **WPF** communities
-* The developers of **Hardcodet.NotifyIcon.Wpf**
-* The developers of the Windows notification libraries used by the project
-
----
-
-## Support
-
-If you find a bug, please open an issue and include:
-
-* Windows version
-* Venguard version/commit
-* What you expected to happen
-* What actually happened
-* Relevant error messages
-* Steps to reproduce the issue
-
-For example:
-
-```text
-Windows: Windows 11 24H2
-Venguard: 0.x.x
-
-Steps:
-1. Open Venguard
-2. Open Settings
-3. Enable background monitoring
-4. Save settings
-5. Restart Venguard
-
-Expected:
-Background monitoring remains enabled.
-
-Actual:
-Background monitoring is disabled after restart.
-```
-
-Avoid posting personal information, Discord account information, authentication tokens, or complete private logs containing sensitive data.
-
----
-
-## Project status
-
-Venguard is an actively developed project.
-
-Features and configuration options may change as development continues, and some parts of the application may still be experimental.
-
-The main priority is to make Discord maintenance **simple, reliable, and unobtrusive** without turning Venguard into another complicated system utility.
-
----
-
-<p align="center">
-  <strong>Venguard</strong><br>
-  Keep Discord healthy. Stay out of the way.
-</p>
+No license file was provided with this project. Please check the repository for license information.
