@@ -1,4 +1,5 @@
-﻿using System.Drawing;
+﻿using System.Diagnostics;
+using System.Drawing;
 using System.IO;
 using System.Windows;
 using System.Windows.Controls;
@@ -12,8 +13,11 @@ namespace Venguard;
 public partial class App : Application
 {
     private TaskbarIcon? _trayIcon;
+    private Icon? _trayIconImage;
     private MainWindow? _mainWindow;
+
     private DiscordMonitor? _discordMonitor;
+
     private ConfigService? _configService;
     private VenguardConfig? _config;
 
@@ -115,61 +119,21 @@ public partial class App : Application
                 _installerManager,
                 _openAsarService);
 
-        var menu =
-            new ContextMenu();
+        CreateTrayIcon();
 
-        var openItem =
-            CreateTrayItem(
-                "⌂",
-                "Open Venguard",
-                ShowMainWindow);
-
-        var settingsItem =
-            CreateTrayItem(
-                "⚙",
-                "Settings",
-                ShowSettingsWindow);
-
-        var exitItem =
-            CreateTrayItem(
-                "×",
-                "Exit Venguard",
-                Shutdown);
-
-        menu.Items.Add(
-            openItem);
-
-        menu.Items.Add(
-            settingsItem);
-
-        menu.Items.Add(
-            new Separator());
-
-        menu.Items.Add(
-            exitItem);
-
-        _trayIcon =
-            new TaskbarIcon
-            {
-                ToolTipText =
-                    "Venguard",
-
-                Icon =
-                    SystemIcons.Application,
-
-                ContextMenu =
-                    menu
-            };
+        var interval =
+            TimeSpan.FromSeconds(
+                Math.Max(
+                    5,
+                    _config.MonitorIntervalSeconds));
 
         _discordMonitor =
             new DiscordMonitor(
                 _discordService,
-                TimeSpan.FromSeconds(10));
+                interval);
 
         _discordMonitor.StatusChanged +=
             DiscordMonitor_StatusChanged;
-
-        _mainWindow.Show();
 
         _mainWindow.UpdateDiscordStatus(
             _discordMonitor.CurrentStatus);
@@ -178,6 +142,16 @@ public partial class App : Application
 
         _configService.Save(
             _config);
+
+        if (_config.StartMinimized)
+        {
+            _mainWindow.Hide();
+        }
+        else
+        {
+            _mainWindow.Show();
+            _mainWindow.Activate();
+        }
     }
 
     protected override void OnExit(
@@ -194,7 +168,18 @@ public partial class App : Application
         _notificationService.Activated -=
             Notification_Activated;
 
-        _trayIcon?.Dispose();
+        if (_trayIcon is not null)
+        {
+            _trayIcon.Visibility =
+                Visibility.Hidden;
+
+            _trayIcon.Dispose();
+
+            _trayIcon = null;
+        }
+
+        _trayIconImage?.Dispose();
+        _trayIconImage = null;
 
         base.OnExit(e);
     }
@@ -241,6 +226,132 @@ public partial class App : Application
         }
     }
 
+    private void CreateTrayIcon()
+    {
+        var icoPath =
+            Path.Combine(
+                AppContext.BaseDirectory,
+                "Assets",
+                "Venguard.ico");
+
+        if (!File.Exists(icoPath))
+        {
+            var projectAssetPath =
+                Path.Combine(
+                    AppContext.BaseDirectory,
+                    "..",
+                    "..",
+                    "..",
+                    "Assets",
+                    "Venguard.ico");
+
+            if (File.Exists(projectAssetPath))
+            {
+                icoPath =
+                    Path.GetFullPath(
+                        projectAssetPath);
+            }
+        }
+
+        if (File.Exists(icoPath))
+        {
+            using var sourceIcon =
+                new Icon(icoPath);
+
+            _trayIconImage =
+                (Icon)sourceIcon.Clone();
+        }
+        else
+        {
+            _trayIconImage =
+                (Icon)SystemIcons.Application.Clone();
+        }
+
+        var menu =
+            new ContextMenu();
+
+        var header =
+            new MenuItem
+            {
+                Header =
+                    _config?.UseOpenAsar == true
+                        ? "Venguard  •  OpenAsar on"
+                        : "Venguard  •  OpenAsar off",
+
+                IsEnabled = false,
+
+                FontWeight =
+                    System.Windows.FontWeights.SemiBold
+            };
+
+        menu.Items.Add(
+            header);
+
+        menu.Items.Add(
+            new Separator());
+
+        menu.Items.Add(
+            CreateTrayItem(
+                "⌂",
+                "Open Venguard",
+                ShowMainWindow));
+
+        menu.Items.Add(
+            CreateTrayItem(
+                "⚙",
+                "Settings",
+                ShowSettingsWindow));
+
+        menu.Items.Add(
+            CreateTrayItem(
+                "↻",
+                "Check Discord now",
+                CheckDiscordNow));
+
+        menu.Items.Add(
+            CreateTrayItem(
+                "⚡",
+                "Repair Vencord",
+                StartRepairFromTray));
+
+        menu.Items.Add(
+            CreateTrayItem(
+                "●",
+                "Open Discord",
+                OpenDiscord));
+
+        menu.Items.Add(
+            CreateTrayItem(
+                "▣",
+                "Open Venguard data",
+                OpenDataFolder));
+
+        menu.Items.Add(
+            new Separator());
+
+        menu.Items.Add(
+            CreateTrayItem(
+                "×",
+                "Exit Venguard",
+                Shutdown));
+
+        _trayIcon =
+            new TaskbarIcon
+            {
+                ToolTipText =
+                    "Venguard — Discord protection utility",
+
+                Icon =
+                    _trayIconImage,
+
+                ContextMenu =
+                    menu,
+
+                Visibility =
+                    Visibility.Visible
+            };
+    }
+
     private static MenuItem CreateTrayItem(
         string icon,
         string header,
@@ -256,20 +367,69 @@ public partial class App : Application
             new TextBlock
             {
                 Text = icon,
+
                 FontFamily =
                     new System.Windows.Media.FontFamily(
                         "Segoe UI Symbol"),
-                FontSize = 15,
+
+                FontSize = 14,
+
                 Foreground =
-                    (Application.Current.Resources[
+                    Application.Current.Resources[
                         "PurpleBrightBrush"]
-                     as System.Windows.Media.Brush)
+                    as System.Windows.Media.Brush
             };
 
         item.Click +=
             (_, _) => action();
 
         return item;
+    }
+
+    private void CheckDiscordNow()
+    {
+        _discordMonitor?.CheckNow();
+    }
+
+    private void StartRepairFromTray()
+    {
+        if (_mainWindow is null)
+        {
+            return;
+        }
+
+        ShowMainWindow();
+
+        _mainWindow.RequestRepair();
+    }
+
+    private void OpenDiscord()
+    {
+        _discordLauncher.Launch();
+    }
+
+    private void OpenDataFolder()
+    {
+        var directory =
+            Path.Combine(
+                Environment.GetFolderPath(
+                    Environment.SpecialFolder.ApplicationData),
+                "Venguard");
+
+        Directory.CreateDirectory(
+            directory);
+
+        Process.Start(
+            new ProcessStartInfo
+            {
+                FileName =
+                    "explorer.exe",
+
+                Arguments =
+                    $"\"{directory}\"",
+
+                UseShellExecute = true
+            });
     }
 
     private void Notification_Activated(
@@ -311,9 +471,7 @@ public partial class App : Application
                     return;
                 }
 
-                ShowMainWindow();
-
-                _mainWindow?.RequestRepair();
+                StartRepairFromTray();
             }));
     }
 
@@ -339,7 +497,8 @@ public partial class App : Application
             }
 
             if (status.IsInstalled &&
-                !status.IsVencordPatched)
+                !status.IsVencordPatched &&
+                _config?.EnableNotifications == true)
             {
                 _notificationService
                     .ShowRepairNeeded();
@@ -368,12 +527,7 @@ public partial class App : Application
 
     private void ShowSettingsWindow()
     {
-        if (_mainWindow is null)
-        {
-            return;
-        }
-
-        _mainWindow.ShowSettingsView();
+        _mainWindow?.ShowSettingsView();
     }
 
     private void App_DispatcherUnhandledException(
@@ -397,7 +551,8 @@ public partial class App : Application
         object sender,
         UnhandledExceptionEventArgs e)
     {
-        if (e.ExceptionObject is Exception exception)
+        if (e.ExceptionObject
+            is Exception exception)
         {
             LogException(
                 "UnhandledException",

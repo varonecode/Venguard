@@ -30,7 +30,8 @@ public sealed class DiscordMonitor : IDisposable
                 AutoReset = true
             };
 
-        _timer.Elapsed += Timer_Elapsed;
+        _timer.Elapsed +=
+            Timer_Elapsed;
     }
 
     public void Start()
@@ -55,14 +56,22 @@ public sealed class DiscordMonitor : IDisposable
         }
 
         _started = false;
+
         _timer.Stop();
+    }
+
+    public void CheckNow()
+    {
+        CheckStatus();
     }
 
     public void Dispose()
     {
         Stop();
 
-        _timer.Elapsed -= Timer_Elapsed;
+        _timer.Elapsed -=
+            Timer_Elapsed;
+
         _timer.Dispose();
     }
 
@@ -89,8 +98,11 @@ public sealed class DiscordMonitor : IDisposable
 
         if (!_hasPublishedInitialStatus)
         {
-            _hasPublishedInitialStatus = true;
-            CurrentStatus = status;
+            _hasPublishedInitialStatus =
+                true;
+
+            CurrentStatus =
+                status;
 
             StatusChanged?.Invoke(
                 this,
@@ -99,12 +111,14 @@ public sealed class DiscordMonitor : IDisposable
             return;
         }
 
-        if (status == CurrentStatus)
+        if (status ==
+            CurrentStatus)
         {
             return;
         }
 
-        CurrentStatus = status;
+        CurrentStatus =
+            status;
 
         StatusChanged?.Invoke(
             this,

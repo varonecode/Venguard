@@ -1,39 +1,55 @@
 using System.Windows;
-using System.Windows.Input;
 using Venguard.Config;
 
 namespace Venguard;
 
 public partial class FirstRunWindow : Window
 {
-    public VenguardConfig Config { get; }
+    private readonly VenguardConfig _config;
 
-    public FirstRunWindow(VenguardConfig config)
+    public FirstRunWindow(
+        VenguardConfig config)
     {
-        Config = config;
+        _config = config;
 
         InitializeComponent();
 
-        AutoStartCheckBox.IsChecked = config.AutoStart;
-        LaunchDiscordCheckBox.IsChecked = config.LaunchDiscordAfterPatch;
-        OpenAsarCheckBox.IsChecked = config.UseOpenAsar;
-    }
+        AutoStartCheckBox.IsChecked =
+            _config.AutoStart;
 
-    private void TitleBar_MouseLeftButtonDown(
-        object sender,
-        MouseButtonEventArgs e)
-    {
-        DragMove();
+        StartMinimizedCheckBox.IsChecked =
+            _config.StartMinimized;
+
+        LaunchDiscordCheckBox.IsChecked =
+            _config.LaunchDiscordAfterPatch;
+
+        UseOpenAsarCheckBox.IsChecked =
+            _config.UseOpenAsar;
     }
 
     private void ContinueButton_Click(
         object sender,
         RoutedEventArgs e)
     {
-        Config.AutoStart = AutoStartCheckBox.IsChecked == true;
-        Config.LaunchDiscordAfterPatch = LaunchDiscordCheckBox.IsChecked == true;
-        Config.UseOpenAsar = OpenAsarCheckBox.IsChecked == true;
+        _config.AutoStart =
+            AutoStartCheckBox.IsChecked == true;
+
+        _config.StartMinimized =
+            StartMinimizedCheckBox.IsChecked == true;
+
+        _config.LaunchDiscordAfterPatch =
+            LaunchDiscordCheckBox.IsChecked == true;
+
+        _config.UseOpenAsar =
+            UseOpenAsarCheckBox.IsChecked == true;
 
         DialogResult = true;
+    }
+
+    private void CancelButton_Click(
+        object sender,
+        RoutedEventArgs e)
+    {
+        DialogResult = false;
     }
 }

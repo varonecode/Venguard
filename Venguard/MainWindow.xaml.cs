@@ -1,6 +1,9 @@
-﻿using System.Windows;
+﻿using System.Diagnostics;
+using System.IO;
+using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using System.Windows.Media.Animation;
 using Venguard.Config;
 using Venguard.Services;
 
@@ -17,6 +20,7 @@ public partial class MainWindow : Window
     private readonly OpenAsarService _openAsarService;
 
     private CancellationTokenSource? _repairCancellation;
+    private bool _forceClose;
 
     public MainWindow(
         VencordRepairService repairService,
@@ -27,17 +31,31 @@ public partial class MainWindow : Window
         VencordInstallerManager installerManager,
         OpenAsarService openAsarService)
     {
-        _repairService = repairService;
-        _config = config;
-        _configService = configService;
-        _startupService = startupService;
-        _discordService = discordService;
-        _installerManager = installerManager;
-        _openAsarService = openAsarService;
+        _repairService =
+            repairService;
+
+        _config =
+            config;
+
+        _configService =
+            configService;
+
+        _startupService =
+            startupService;
+
+        _discordService =
+            discordService;
+
+        _installerManager =
+            installerManager;
+
+        _openAsarService =
+            openAsarService;
 
         InitializeComponent();
 
         LoadSettings();
+
         ShowDashboardView();
     }
 
@@ -46,15 +64,19 @@ public partial class MainWindow : Window
     {
         if (!status.IsInstalled)
         {
-            StatusText.Text = "Discord not found";
-            OpenAsarStatusText.Text = "Unavailable";
+            StatusText.Text =
+                "Discord not found";
+
+            OpenAsarStatusText.Text =
+                "Unavailable";
+
             return;
         }
 
         StatusText.Text =
             status.IsVencordPatched
-                ? "Patched"
-                : "Not patched";
+                ? "Protected"
+                : "Needs repair";
 
         OpenAsarStatusText.Text =
             status.IsOpenAsar
@@ -74,17 +96,30 @@ public partial class MainWindow : Window
     public void ShowSettingsView()
     {
         LoadSettings();
+
         ShowSettingsViewInternal();
+
         Activate();
+    }
+
+    public void ForceClose()
+    {
+        _forceClose = true;
+
+        Close();
     }
 
     private void ShowDashboardView()
     {
+        SettingsView.Visibility =
+            Visibility.Collapsed;
+
         DashboardView.Visibility =
             Visibility.Visible;
 
-        SettingsView.Visibility =
-            Visibility.Collapsed;
+        DashboardTranslate.X = -12;
+
+        DashboardView.Opacity = 0;
 
         SetNavigationState(
             DashboardNavButton,
@@ -93,6 +128,10 @@ public partial class MainWindow : Window
         SetNavigationState(
             SettingsNavButton,
             false);
+
+        DashboardView.BeginStoryboard(
+            (Storyboard)FindResource(
+                "DashboardEnter"));
     }
 
     private void ShowSettingsViewInternal()
@@ -103,6 +142,12 @@ public partial class MainWindow : Window
         SettingsView.Visibility =
             Visibility.Visible;
 
+        SettingsTranslate.X =
+            12;
+
+        SettingsView.Opacity =
+            0;
+
         SetNavigationState(
             DashboardNavButton,
             false);
@@ -110,6 +155,10 @@ public partial class MainWindow : Window
         SetNavigationState(
             SettingsNavButton,
             true);
+
+        SettingsView.BeginStoryboard(
+            (Storyboard)FindResource(
+                "SettingsEnter"));
     }
 
     private static void SetNavigationState(
@@ -119,7 +168,7 @@ public partial class MainWindow : Window
         button.Background =
             selected
                 ? Application.Current.Resources[
-                    "SurfaceElevatedBrush"]
+                    "SurfaceSelectedBrush"]
                     as System.Windows.Media.Brush
                 : System.Windows.Media.Brushes.Transparent;
 
@@ -138,11 +187,44 @@ public partial class MainWindow : Window
         AutoStartCheckBox.IsChecked =
             _config.AutoStart;
 
+        StartMinimizedCheckBox.IsChecked =
+            _config.StartMinimized;
+
+        MinimizeToTrayCheckBox.IsChecked =
+            _config.MinimizeToTray;
+
+        CloseToTrayCheckBox.IsChecked =
+            _config.CloseToTray;
+
+        ConfirmBeforeRepairCheckBox.IsChecked =
+            _config.ConfirmBeforeRepair;
+
         LaunchDiscordCheckBox.IsChecked =
             _config.LaunchDiscordAfterPatch;
 
         OpenAsarCheckBox.IsChecked =
             _config.UseOpenAsar;
+
+        NotificationsCheckBox.IsChecked =
+            _config.EnableNotifications;
+
+        NotifySuccessCheckBox.IsChecked =
+            _config.NotifyOnRepairSuccess;
+
+        NotifyFailureCheckBox.IsChecked =
+            _config.NotifyOnRepairFailure;
+
+        MonitorIntervalComboBox.SelectedValue =
+            _config.MonitorIntervalSeconds
+                .ToString();
+
+        TrayStateText.Text =
+            _config.CloseToTray
+                ? "Close button → system tray"
+                : "Close button → exit app";
+
+        MonitorIntervalText.Text =
+            $"Monitoring every {_config.MonitorIntervalSeconds} seconds";
 
         SettingsResultText.Text =
             string.Empty;
@@ -157,17 +239,42 @@ public partial class MainWindow : Window
             var newAutoStart =
                 AutoStartCheckBox.IsChecked == true;
 
+            var newStartMinimized =
+                StartMinimizedCheckBox.IsChecked == true;
+
+            var newMinimizeToTray =
+                MinimizeToTrayCheckBox.IsChecked == true;
+
+            var newCloseToTray =
+                CloseToTrayCheckBox.IsChecked == true;
+
+            var newConfirmBeforeRepair =
+                ConfirmBeforeRepairCheckBox.IsChecked == true;
+
             var newLaunchDiscord =
                 LaunchDiscordCheckBox.IsChecked == true;
 
             var newUseOpenAsar =
                 OpenAsarCheckBox.IsChecked == true;
 
+            var newNotifications =
+                NotificationsCheckBox.IsChecked == true;
+
+            var newNotifySuccess =
+                NotifySuccessCheckBox.IsChecked == true;
+
+            var newNotifyFailure =
+                NotifyFailureCheckBox.IsChecked == true;
+
+            var newInterval =
+                GetSelectedMonitorInterval();
+
             if (newUseOpenAsar !=
                 _config.UseOpenAsar)
             {
                 var installation =
-                    _discordService.GetInstallation();
+                    _discordService
+                        .GetInstallation();
 
                 if (installation is null)
                 {
@@ -177,7 +284,8 @@ public partial class MainWindow : Window
                     return;
                 }
 
-                if (_discordService.IsDiscordRunning())
+                if (_discordService
+                    .IsDiscordRunning())
                 {
                     SettingsResultText.Text =
                         "Close Discord before changing OpenAsar.";
@@ -225,21 +333,40 @@ public partial class MainWindow : Window
 
                     return;
                 }
-
-                SettingsResultText.Text =
-                    newUseOpenAsar
-                        ? "OpenAsar enabled."
-                        : "OpenAsar disabled.";
             }
 
             _config.AutoStart =
                 newAutoStart;
+
+            _config.StartMinimized =
+                newStartMinimized;
+
+            _config.MinimizeToTray =
+                newMinimizeToTray;
+
+            _config.CloseToTray =
+                newCloseToTray;
+
+            _config.ConfirmBeforeRepair =
+                newConfirmBeforeRepair;
 
             _config.LaunchDiscordAfterPatch =
                 newLaunchDiscord;
 
             _config.UseOpenAsar =
                 newUseOpenAsar;
+
+            _config.EnableNotifications =
+                newNotifications;
+
+            _config.NotifyOnRepairSuccess =
+                newNotifySuccess;
+
+            _config.NotifyOnRepairFailure =
+                newNotifyFailure;
+
+            _config.MonitorIntervalSeconds =
+                newInterval;
 
             _configService.Save(
                 _config);
@@ -249,6 +376,14 @@ public partial class MainWindow : Window
 
             UpdateDiscordStatus(
                 _discordService.GetStatus());
+
+            TrayStateText.Text =
+                _config.CloseToTray
+                    ? "Close button → system tray"
+                    : "Close button → exit app";
+
+            MonitorIntervalText.Text =
+                $"Monitoring every {_config.MonitorIntervalSeconds} seconds";
 
             SettingsResultText.Text =
                 "Settings saved.";
@@ -276,6 +411,199 @@ public partial class MainWindow : Window
             "Changes discarded.";
     }
 
+    private void OpenDataFolderButton_Click(
+        object sender,
+        RoutedEventArgs e)
+    {
+        var directory =
+            Path.Combine(
+                Environment.GetFolderPath(
+                    Environment.SpecialFolder.ApplicationData),
+                "Venguard");
+
+        Directory.CreateDirectory(
+            directory);
+
+        Process.Start(
+            new ProcessStartInfo
+            {
+                FileName =
+                    "explorer.exe",
+
+                Arguments =
+                    $"\"{directory}\"",
+
+                UseShellExecute = true
+            });
+    }
+
+    private void ClearLogsButton_Click(
+        object sender,
+        RoutedEventArgs e)
+    {
+        try
+        {
+            var directory =
+                Path.Combine(
+                    Environment.GetFolderPath(
+                        Environment.SpecialFolder.ApplicationData),
+                    "Venguard");
+
+            foreach (var path in new[]
+                     {
+                         Path.Combine(
+                             directory,
+                             "debug.log"),
+
+                         Path.Combine(
+                             directory,
+                             "toast-debug.log")
+                     })
+            {
+                try
+                {
+                    if (File.Exists(path))
+                    {
+                        File.Delete(path);
+                    }
+                }
+                catch
+                {
+                }
+            }
+
+            SettingsResultText.Text =
+                "Debug logs cleared.";
+        }
+        catch (Exception ex)
+        {
+            SettingsResultText.Text =
+                "Could not clear debug logs.";
+
+            MessageBox.Show(
+                ex.ToString(),
+                "Venguard",
+                MessageBoxButton.OK,
+                MessageBoxImage.Error);
+        }
+    }
+
+    private void ResetSettingsButton_Click(
+        object sender,
+        RoutedEventArgs e)
+    {
+        var result =
+            MessageBox.Show(
+                "Reset all Venguard settings to their defaults?",
+                "Reset settings",
+                MessageBoxButton.YesNo,
+                MessageBoxImage.Warning);
+
+        if (result !=
+            MessageBoxResult.Yes)
+        {
+            return;
+        }
+
+        _config.IsFirstRun = false;
+        _config.AutoStart = true;
+        _config.StartMinimized = false;
+        _config.MinimizeToTray = true;
+        _config.CloseToTray = true;
+        _config.LaunchDiscordAfterPatch = true;
+        _config.UseOpenAsar = true;
+        _config.ConfirmBeforeRepair = true;
+        _config.EnableNotifications = true;
+        _config.NotifyOnRepairSuccess = true;
+        _config.NotifyOnRepairFailure = true;
+        _config.MonitorIntervalSeconds = 10;
+
+        _configService.Save(
+            _config);
+
+        _startupService.SetEnabled(
+            _config.AutoStart);
+
+        LoadSettings();
+
+        SettingsResultText.Text =
+            "Settings reset.";
+    }
+
+    private void UninstallButton_Click(
+        object sender,
+        RoutedEventArgs e)
+    {
+        var result =
+            MessageBox.Show(
+                "This removes Venguard's startup registration and user data. Discord itself will not be modified.\n\nContinue?",
+                "Uninstall Venguard",
+                MessageBoxButton.YesNo,
+                MessageBoxImage.Warning);
+
+        if (result !=
+            MessageBoxResult.Yes)
+        {
+            return;
+        }
+
+        try
+        {
+            _startupService.SetEnabled(
+                false);
+
+            var directory =
+                Path.Combine(
+                    Environment.GetFolderPath(
+                        Environment.SpecialFolder.ApplicationData),
+                    "Venguard");
+
+            if (Directory.Exists(directory))
+            {
+                foreach (var file in
+                         Directory.GetFiles(
+                             directory,
+                             "*",
+                             SearchOption.TopDirectoryOnly))
+                {
+                    try
+                    {
+                        File.Delete(file);
+                    }
+                    catch
+                    {
+                    }
+                }
+            }
+
+            _forceClose = true;
+
+            Application.Current.Shutdown();
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show(
+                ex.ToString(),
+                "Uninstall Venguard",
+                MessageBoxButton.OK,
+                MessageBoxImage.Error);
+        }
+    }
+
+    private int GetSelectedMonitorInterval()
+    {
+        if (MonitorIntervalComboBox.SelectedItem
+            is ComboBoxItem item &&
+            int.TryParse(
+                item.Tag?.ToString(),
+                out var seconds))
+        {
+            return seconds;
+        }
+
+        return 10;
+    }
+
     private void DashboardNavButton_Click(
         object sender,
         RoutedEventArgs e)
@@ -288,6 +616,7 @@ public partial class MainWindow : Window
         RoutedEventArgs e)
     {
         LoadSettings();
+
         ShowSettingsViewInternal();
     }
 
@@ -333,17 +662,20 @@ public partial class MainWindow : Window
                 return;
             }
 
-            var confirmation =
-                MessageBox.Show(
-                    "Venguard will use the official Vencord installer to repair Discord.",
-                    "Repair Vencord",
-                    MessageBoxButton.YesNo,
-                    MessageBoxImage.Question);
-
-            if (confirmation !=
-                MessageBoxResult.Yes)
+            if (_config.ConfirmBeforeRepair)
             {
-                return;
+                var confirmation =
+                    MessageBox.Show(
+                        "Venguard will use the official Vencord installer to repair Discord.",
+                        "Repair Vencord",
+                        MessageBoxButton.YesNo,
+                        MessageBoxImage.Question);
+
+                if (confirmation !=
+                    MessageBoxResult.Yes)
+                {
+                    return;
+                }
             }
 
             _repairCancellation =
@@ -364,14 +696,14 @@ public partial class MainWindow : Window
             ProgressText.Visibility =
                 Visibility.Visible;
 
+            ResultText.Visibility =
+                Visibility.Collapsed;
+
             ProgressText.Text =
                 "Preparing repair...";
 
             StatusText.Text =
                 "Repairing...";
-
-            var useOpenAsar =
-                _config.UseOpenAsar;
 
             var cancellationToken =
                 _repairCancellation.Token;
@@ -391,7 +723,7 @@ public partial class MainWindow : Window
             var repairResult =
                 await _repairService
                     .RepairAsync(
-                        useOpenAsar,
+                        _config.UseOpenAsar,
                         progress,
                         cancellationToken);
 
@@ -401,11 +733,11 @@ public partial class MainWindow : Window
                 StatusText.Text =
                     "Repair cancelled";
 
-                ResultText.Text =
+                ProgressText.Text =
                     "Repair was cancelled.";
 
                 ResultText.Visibility =
-                    Visibility.Visible;
+                    Visibility.Collapsed;
 
                 return;
             }
@@ -415,30 +747,13 @@ public partial class MainWindow : Window
                 repairResult.VencordSucceeded)
             {
                 StatusText.Text =
-                    "Patched";
+                    "Protected";
 
                 OpenAsarStatusText.Text =
                     "Change failed";
 
-                ResultText.Text =
-                    "Vencord was repaired, but the OpenAsar setting could not be applied.";
-
-                ResultText.Visibility =
-                    Visibility.Visible;
-
-                MessageBox.Show(
-                    repairResult.Message,
-                    "Repair Partially Completed",
-                    MessageBoxButton.OK,
-                    MessageBoxImage.Warning);
-
-                return;
-            }
-
-            if (!repairResult.Success)
-            {
-                StatusText.Text =
-                    "Repair failed";
+                ProgressText.Text =
+                    "Vencord was repaired, but OpenAsar could not be changed.";
 
                 ResultText.Text =
                     repairResult.Message;
@@ -446,17 +761,46 @@ public partial class MainWindow : Window
                 ResultText.Visibility =
                     Visibility.Visible;
 
+                if (_config.NotifyOnRepairFailure)
+                {
+                    MessageBox.Show(
+                        repairResult.Message,
+                        "Repair Partially Completed",
+                        MessageBoxButton.OK,
+                        MessageBoxImage.Warning);
+                }
+
+                return;
+            }
+
+            if (!repairResult.Success)
+            {
+                StatusText.Text =
+                    "Needs repair";
+
                 var details =
                     string.IsNullOrWhiteSpace(
                         repairResult.Error)
                         ? repairResult.Output
                         : repairResult.Error;
 
-                MessageBox.Show(
-                    $"{repairResult.Message}\n\n{details}",
-                    "Venguard Repair Failed",
-                    MessageBoxButton.OK,
-                    MessageBoxImage.Error);
+                ProgressText.Text =
+                    "Repair failed.";
+
+                ResultText.Text =
+                    repairResult.Message;
+
+                ResultText.Visibility =
+                    Visibility.Visible;
+
+                if (_config.NotifyOnRepairFailure)
+                {
+                    MessageBox.Show(
+                        $"{repairResult.Message}\n\n{details}",
+                        "Venguard Repair Failed",
+                        MessageBoxButton.OK,
+                        MessageBoxImage.Error);
+                }
 
                 return;
             }
@@ -465,34 +809,38 @@ public partial class MainWindow : Window
                 _discordService.GetStatus());
 
             ProgressText.Text =
-                "Repair completed successfully.";
+                "Repair complete.";
 
             ResultText.Text =
-                "Repair completed successfully.";
+                "Vencord was successfully repaired.";
 
             ResultText.Visibility =
                 Visibility.Visible;
 
-            app.CompleteRepair(true);
+            app.CompleteRepair(
+                true);
         }
         catch (OperationCanceledException)
         {
             StatusText.Text =
                 "Repair cancelled";
 
-            ResultText.Text =
+            ProgressText.Text =
                 "Repair was cancelled.";
 
             ResultText.Visibility =
-                Visibility.Visible;
+                Visibility.Collapsed;
         }
         catch (Exception ex)
         {
             StatusText.Text =
                 "Repair failed";
 
+            ProgressText.Text =
+                "An unexpected error occurred.";
+
             ResultText.Text =
-                "Repair failed.";
+                ex.Message;
 
             ResultText.Visibility =
                 Visibility.Visible;
@@ -506,7 +854,9 @@ public partial class MainWindow : Window
         finally
         {
             _repairCancellation?.Dispose();
-            _repairCancellation = null;
+
+            _repairCancellation =
+                null;
 
             app.CompleteRepair(false);
 
@@ -552,6 +902,7 @@ public partial class MainWindow : Window
         if (e.ClickCount == 2)
         {
             ToggleMaximize();
+
             return;
         }
 
@@ -562,7 +913,15 @@ public partial class MainWindow : Window
         object sender,
         RoutedEventArgs e)
     {
-        Hide();
+        if (_config.MinimizeToTray)
+        {
+            Hide();
+        }
+        else
+        {
+            WindowState =
+                WindowState.Minimized;
+        }
     }
 
     private void MaximizeButton_Click(
@@ -576,7 +935,29 @@ public partial class MainWindow : Window
         object sender,
         RoutedEventArgs e)
     {
+        if (_forceClose ||
+            !_config.CloseToTray)
+        {
+            Application.Current.Shutdown();
+
+            return;
+        }
+
         Hide();
+    }
+
+    protected override void OnClosing(
+        System.ComponentModel.CancelEventArgs e)
+    {
+        if (!_forceClose &&
+            _config.CloseToTray)
+        {
+            e.Cancel = true;
+
+            Hide();
+        }
+
+        base.OnClosing(e);
     }
 
     private void ToggleMaximize()
