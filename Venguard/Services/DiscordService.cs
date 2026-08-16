@@ -15,11 +15,47 @@ public sealed class DiscordService
 
     public bool IsDiscordInstalled()
     {
-        return Directory.Exists(_discordPath);
+        return GetDiscordVersionPath() is not null;
+    }
+
+    public bool IsVencordPatched()
+    {
+        var versionPath = GetDiscordVersionPath();
+
+        if (versionPath is null)
+        {
+            return false;
+        }
+
+        var appAsarPath = Path.Combine(
+            versionPath,
+            "resources",
+            "_app.asar");
+
+        return File.Exists(appAsarPath);
     }
 
     public string? GetInstallationPath()
     {
-        return IsDiscordInstalled() ? _discordPath : null;
+        return GetDiscordVersionPath();
+    }
+
+    private string? GetDiscordVersionPath()
+    {
+        if (!Directory.Exists(_discordPath))
+        {
+            return null;
+        }
+
+        var versions = Directory.GetDirectories(_discordPath, "app-*");
+
+        return versions
+            .OrderByDescending(path => path, StringComparer.OrdinalIgnoreCase)
+            .FirstOrDefault(HasResourcesDirectory);
+    }
+
+    private static bool HasResourcesDirectory(string path)
+    {
+        return Directory.Exists(Path.Combine(path, "resources"));
     }
 }
