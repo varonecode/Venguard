@@ -98,7 +98,7 @@ public partial class SettingsWindow : Window
                 var installerPath =
                     await _installerManager.GetInstallerAsync();
 
-                var result = MessageBox.Show(
+                var confirmation = MessageBox.Show(
                     newUseOpenAsar
                         ? "Venguard will install OpenAsar using the official Vencord installer. Continue?"
                         : "Venguard will uninstall OpenAsar using the official Vencord installer. Continue?",
@@ -108,23 +108,27 @@ public partial class SettingsWindow : Window
                     MessageBoxButton.YesNo,
                     MessageBoxImage.Question);
 
-                if (result != MessageBoxResult.Yes)
+                if (confirmation != MessageBoxResult.Yes)
                 {
                     return;
                 }
 
-                var success =
+                var openAsarResult =
                     await _openAsarService.SetEnabledAsync(
                         installerPath,
                         installation.DiscordPath,
                         newUseOpenAsar);
 
-                if (!success)
+                if (!openAsarResult.Success)
                 {
+                    var details =
+                        string.IsNullOrWhiteSpace(
+                            openAsarResult.Error)
+                            ? openAsarResult.Output
+                            : openAsarResult.Error;
+
                     MessageBox.Show(
-                        newUseOpenAsar
-                            ? "OpenAsar installation failed."
-                            : "OpenAsar removal failed.",
+                        $"{openAsarResult.Message}\n\n{details}",
                         "OpenAsar",
                         MessageBoxButton.OK,
                         MessageBoxImage.Error);
@@ -134,6 +138,7 @@ public partial class SettingsWindow : Window
             }
 
             _config.AutoStart = newAutoStart;
+
             _config.LaunchDiscordAfterPatch =
                 newLaunchDiscord;
 

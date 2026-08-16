@@ -61,7 +61,8 @@ public partial class App : Application
             _config.IsFirstRun = false;
             _configService.Save(_config);
 
-            _startupService.SetEnabled(_config.AutoStart);
+            _startupService.SetEnabled(
+                _config.AutoStart);
         }
 
         _discordService = new DiscordService();
@@ -76,12 +77,15 @@ public partial class App : Application
         var installerService =
             new VencordInstallerService();
 
-        _repairService = new VencordRepairService(
-            _discordService,
-            _installerManager,
-            installerService);
+        _openAsarService =
+            new OpenAsarService();
 
-        _openAsarService = new OpenAsarService();
+        _repairService =
+            new VencordRepairService(
+                _discordService,
+                _installerManager,
+                installerService,
+                _openAsarService);
 
         _notificationService =
             new NotificationService();

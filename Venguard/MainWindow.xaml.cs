@@ -29,9 +29,10 @@ public partial class MainWindow : Window
             return;
         }
 
-        StatusText.Text = status.IsVencordPatched
-            ? "Vencord: Patched"
-            : "Vencord: Not patched";
+        StatusText.Text =
+            status.IsVencordPatched
+                ? "Vencord: Patched"
+                : "Vencord: Not patched";
 
         OpenAsarStatusText.Text =
             status.IsOpenAsar
@@ -64,6 +65,11 @@ public partial class MainWindow : Window
         {
             if (_repairService.IsDiscordRunning())
             {
+                ResultText.Text =
+                    "Close Discord before starting a repair.";
+                ResultText.Visibility =
+                    Visibility.Visible;
+
                 MessageBox.Show(
                     "Discord is currently running. Please fully close Discord from the system tray before repairing Vencord.",
                     "Discord is running",
@@ -74,7 +80,7 @@ public partial class MainWindow : Window
             }
 
             var result = MessageBox.Show(
-                "Venguard will use the official Vencord installer to repair Discord. Continue?",
+                "Venguard will use the official Vencord installer to repair Discord.",
                 "Repair Vencord",
                 MessageBoxButton.YesNo,
                 MessageBoxImage.Question);
@@ -84,10 +90,12 @@ public partial class MainWindow : Window
                 return;
             }
 
+            ResultText.Visibility =
+                Visibility.Collapsed;
+
             RepairButton.IsEnabled = false;
             RepairProgressBar.Visibility =
                 Visibility.Visible;
-
             ProgressText.Visibility =
                 Visibility.Visible;
 
@@ -96,6 +104,9 @@ public partial class MainWindow : Window
 
             StatusText.Text =
                 "Repairing Vencord...";
+
+            var useOpenAsar =
+                ReadUseOpenAsarSetting();
 
             var progress =
                 new Progress<string>(
@@ -107,12 +118,19 @@ public partial class MainWindow : Window
 
             var repairResult =
                 await _repairService.RepairAsync(
+                    useOpenAsar,
                     progress);
 
             if (!repairResult.Success)
             {
                 StatusText.Text =
                     "Vencord repair failed";
+
+                ResultText.Text =
+                    repairResult.Message;
+
+                ResultText.Visibility =
+                    Visibility.Visible;
 
                 var details =
                     string.IsNullOrWhiteSpace(
@@ -135,12 +153,23 @@ public partial class MainWindow : Window
             ProgressText.Text =
                 "Repair completed successfully.";
 
+            ResultText.Text =
+                "Repair completed successfully.";
+            ResultText.Visibility =
+                Visibility.Visible;
+
             app.CompleteRepair(true);
         }
         catch (Exception ex)
         {
             StatusText.Text =
                 "Vencord repair failed";
+
+            ResultText.Text =
+                "Repair failed.";
+
+            ResultText.Visibility =
+                Visibility.Visible;
 
             MessageBox.Show(
                 ex.ToString(),
@@ -160,6 +189,17 @@ public partial class MainWindow : Window
 
             RepairButton.IsEnabled = true;
         }
+    }
+
+    private static bool ReadUseOpenAsarSetting()
+    {
+        var configService =
+            new Config.ConfigService();
+
+        var config =
+            configService.Load();
+
+        return config.UseOpenAsar;
     }
 
     private void TitleBar_MouseLeftButtonDown(
