@@ -6,9 +6,12 @@ namespace Venguard;
 
 public partial class MainWindow : Window
 {
-    public MainWindow()
+    private readonly VencordRepairService _repairService;
+
+    public MainWindow(VencordRepairService repairService)
     {
         InitializeComponent();
+        _repairService = repairService;
     }
 
     public void UpdateDiscordStatus(DiscordStatus status)
@@ -45,6 +48,88 @@ public partial class MainWindow : Window
     private void CloseButton_Click(object sender, RoutedEventArgs e)
     {
         Hide();
+    }
+
+    private async void RepairButton_Click(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            if (_repairService.IsDiscordRunning())
+            {
+                MessageBox.Show(
+                    "Discord is currently running. Please fully close Discord from the system tray before repairing Vencord.",
+                    "Discord is running",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Warning);
+
+                return;
+            }
+
+            var result = MessageBox.Show(
+                "Venguard will use the official Vencord installer to repair Discord. Continue?",
+                "Repair Vencord",
+                MessageBoxButton.YesNo,
+                MessageBoxImage.Question);
+
+            if (result != MessageBoxResult.Yes)
+            {
+                return;
+            }
+
+            RepairButton.IsEnabled = false;
+            StatusText.Text = "Repairing Vencord...";
+
+            var repairResult = await _repairService.RepairAsync();
+
+            StatusText.Text = repairResult.Success
+                ? "Vencord is patched"
+                : "Vencord repair failed";
+
+            if (!repairResult.Success)
+            {
+                var details = string.IsNullOrWhiteSpace(repairResult.Error)
+                    ? repairResult.Output
+                    : repairResult.Error;
+
+                MessageBox.Show(
+                    $"{repairResult.Message}\n\n{details}",
+                    "Vencord Repair Failed",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            var path = System.IO.Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+                "Venguard",
+                "debug.log");
+
+            try
+            {
+                System.IO.Directory.CreateDirectory(
+                    System.IO.Path.GetDirectoryName(path)!);
+
+                System.IO.File.AppendAllText(
+                    path,
+                    $"{DateTime.Now:O} RepairButton_Click{Environment.NewLine}{ex}{Environment.NewLine}{Environment.NewLine}");
+            }
+            catch
+            {
+            }
+
+            MessageBox.Show(
+                ex.ToString(),
+                "Venguard Error",
+                MessageBoxButton.OK,
+                MessageBoxImage.Error);
+
+            StatusText.Text = "Vencord repair failed";
+        }
+        finally
+        {
+            RepairButton.IsEnabled = true;
+        }
     }
 
     private void ToggleMaximize()

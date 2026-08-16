@@ -1,4 +1,5 @@
 ﻿using System.Drawing;
+using System.IO;
 using System.Windows;
 using System.Windows.Controls;
 using Hardcodet.Wpf.TaskbarNotification;
@@ -14,7 +15,14 @@ public partial class App : Application
     private DiscordMonitor? _discordMonitor;
     private ConfigService? _configService;
     private VenguardConfig? _config;
-    private StartupService? _startupService;
+    private StartupService _startupService = null!;
+    private VencordRepairService _repairService = null!;
+
+    public App()
+    {
+        DispatcherUnhandledException += App_DispatcherUnhandledException;
+        AppDomain.CurrentDomain.UnhandledException += App_UnhandledException;
+    }
 
     protected override void OnStartup(StartupEventArgs e)
     {
@@ -40,7 +48,17 @@ public partial class App : Application
             _configService.Save(_config);
         }
 
-         _mainWindow = new MainWindow();
+        var discordService = new DiscordService();
+        var installerDownloader = new VencordInstallerDownloader();
+        var installerManager = new VencordInstallerManager(installerDownloader);
+        var installerService = new VencordInstallerService();
+
+        _repairService = new VencordRepairService(
+            discordService,
+            installerManager,
+            installerService);
+
+        _mainWindow = new MainWindow(_repairService);
 
         var menu = new ContextMenu();
 
@@ -68,8 +86,6 @@ public partial class App : Application
             Icon = SystemIcons.Application,
             ContextMenu = menu
         };
-
-        var discordService = new DiscordService();
 
         _discordMonitor = new DiscordMonitor(
             discordService,
@@ -123,5 +139,51 @@ public partial class App : Application
         }
 
         _mainWindow.Activate();
+    }
+
+    private void App_DispatcherUnhandledException(
+        object sender,
+        System.Windows.Threading.DispatcherUnhandledExceptionEventArgs e)
+    {
+        LogException("DispatcherUnhandledException", e.Exception);
+
+        MessageBox.Show(
+            e.Exception.ToString(),
+            "Venguard Error",
+            MessageBoxButton.OK,
+            MessageBoxImage.Error);
+
+        e.Handled = true;
+    }
+
+    private void App_UnhandledException(
+        object sender,
+        UnhandledExceptionEventArgs e)
+    {
+        if (e.ExceptionObject is Exception exception)
+        {
+            LogException("UnhandledException", exception);
+        }
+    }
+
+    private static void LogException(string source, Exception exception)
+    {
+        try
+        {
+            var directory = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+                "Venguard");
+
+            Directory.CreateDirectory(directory);
+
+            var path = Path.Combine(directory, "debug.log");
+
+            File.AppendAllText(
+                path,
+                $"{DateTime.Now:O} {source}{Environment.NewLine}{exception}{Environment.NewLine}{Environment.NewLine}");
+        }
+        catch
+        {
+        }
     }
 }

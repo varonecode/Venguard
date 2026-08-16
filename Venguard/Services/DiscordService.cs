@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.IO;
 
 namespace Venguard.Services;
@@ -28,6 +29,11 @@ public sealed class DiscordService
             installation.VersionPath);
     }
 
+    public bool IsDiscordRunning()
+    {
+        return Process.GetProcessesByName("Discord").Length > 0;
+    }
+
     public DiscordInstallation? GetInstallation()
     {
         var versionPath = GetDiscordVersionPath();
@@ -40,6 +46,7 @@ public sealed class DiscordService
         var resourcesPath = Path.Combine(versionPath, "resources");
 
         return new DiscordInstallation(
+            _discordPath,
             versionPath,
             resourcesPath,
             Path.Combine(resourcesPath, "app.asar"),

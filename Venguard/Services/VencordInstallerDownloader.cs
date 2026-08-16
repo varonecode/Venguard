@@ -31,9 +31,6 @@ public sealed class VencordInstallerDownloader
             "VencordInstallerCli.exe");
 
         var temporaryPath = installerPath + ".download";
-        var checksumsPath = Path.Combine(
-            destinationDirectory,
-            "checksums.sha256");
 
         try
         {
@@ -46,19 +43,11 @@ public sealed class VencordInstallerDownloader
                 installerBytes,
                 cancellationToken);
 
-            await using var checksumStream = await _httpClient.GetStreamAsync(
+            var checksums = await _httpClient.GetStringAsync(
                 ChecksumsUrl,
                 cancellationToken);
 
-            await using var checksumFile = File.Create(checksumsPath);
-            await checksumStream.CopyToAsync(
-                checksumFile,
-                cancellationToken);
-
-            var expectedHash = await GetExpectedHashAsync(
-                checksumsPath,
-                cancellationToken);
-
+            var expectedHash = GetExpectedHash(checksums);
             var actualHash = await ComputeHashAsync(
                 temporaryPath,
                 cancellationToken);
@@ -72,7 +61,10 @@ public sealed class VencordInstallerDownloader
                     "The downloaded Vencord installer failed SHA-256 verification.");
             }
 
-            File.Move(temporaryPath, installerPath, true);
+            File.Move(
+                temporaryPath,
+                installerPath,
+                true);
 
             return installerPath;
         }
@@ -82,21 +74,14 @@ public sealed class VencordInstallerDownloader
             {
                 File.Delete(temporaryPath);
             }
-
-            if (File.Exists(checksumsPath))
-            {
-                File.Delete(checksumsPath);
-            }
         }
     }
 
-    private static async Task<string> GetExpectedHashAsync(
-        string checksumsPath,
-        CancellationToken cancellationToken)
+    private static string GetExpectedHash(string checksums)
     {
-        var lines = await File.ReadAllLinesAsync(
-            checksumsPath,
-            cancellationToken);
+        var lines = checksums.Split(
+            new[] { "\r\n", "\n" },
+            StringSplitOptions.RemoveEmptyEntries);
 
         var line = lines.FirstOrDefault(line =>
             line.Contains(
