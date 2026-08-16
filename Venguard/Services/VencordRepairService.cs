@@ -29,13 +29,16 @@ public sealed class VencordRepairService
         IProgress<string>? progress = null,
         CancellationToken cancellationToken = default)
     {
-        progress?.Report("Checking the Discord installation...");
+        progress?.Report(
+            "Checking the Discord installation...");
 
         var installation = _discordService.GetInstallation();
 
         if (installation is null)
         {
             return new VencordRepairResult(
+                VencordRepairStage.None,
+                false,
                 false,
                 "Discord Stable was not found.",
                 string.Empty,
@@ -47,21 +50,29 @@ public sealed class VencordRepairService
                 progress,
                 cancellationToken);
 
-        progress?.Report("Repairing Vencord...");
+        progress?.Report(
+            "Repairing Vencord...");
 
-        var repairResult =
+        var installerResult =
             await _installerService.RepairAsync(
                 installerPath,
                 installation.DiscordPath,
                 progress,
                 cancellationToken);
 
-        if (!repairResult.Success)
+        if (!installerResult.Success)
         {
-            return repairResult;
+            return new VencordRepairResult(
+                VencordRepairStage.Vencord,
+                false,
+                false,
+                installerResult.Message,
+                installerResult.Output,
+                installerResult.Error);
         }
 
-        var currentStatus = _discordService.GetStatus();
+        var currentStatus =
+            _discordService.GetStatus();
 
         if (currentStatus.IsOpenAsar == useOpenAsar)
         {
@@ -73,7 +84,13 @@ public sealed class VencordRepairService
             progress?.Report(
                 "Repair completed successfully.");
 
-            return repairResult;
+            return new VencordRepairResult(
+                VencordRepairStage.Complete,
+                true,
+                true,
+                "Vencord repair completed successfully.",
+                installerResult.Output,
+                installerResult.Error);
         }
 
         progress?.Report(
@@ -92,9 +109,11 @@ public sealed class VencordRepairService
         if (!openAsarResult.Success)
         {
             return new VencordRepairResult(
+                VencordRepairStage.OpenAsar,
+                true,
                 false,
                 openAsarResult.Message,
-                repairResult.Output,
+                installerResult.Output,
                 openAsarResult.Error);
         }
 
@@ -102,9 +121,31 @@ public sealed class VencordRepairService
             "Repair completed successfully.");
 
         return new VencordRepairResult(
+            VencordRepairStage.Complete,
+            true,
             true,
             "Vencord repair completed successfully.",
-            $"{repairResult.Output}{Environment.NewLine}{openAsarResult.Output}",
-            $"{repairResult.Error}{Environment.NewLine}{openAsarResult.Error}");
+            $"{installerResult.Output}{Environment.NewLine}{openAsarResult.Output}",
+            $"{installerResult.Error}{Environment.NewLine}{openAsarResult.Error}");
     }
+}
+
+public enum VencordRepairStage
+{
+    None,
+    Vencord,
+    OpenAsar,
+    Complete
+}
+
+public sealed record VencordRepairResult(
+    VencordRepairStage Stage,
+    bool VencordSucceeded,
+    bool OpenAsarSucceeded,
+    string Message,
+    string Output,
+    string Error)
+{
+    public bool Success =>
+        VencordSucceeded && OpenAsarSucceeded;
 }

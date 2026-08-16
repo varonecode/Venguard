@@ -63,10 +63,14 @@ public partial class MainWindow : Window
 
         try
         {
+            ResultText.Visibility =
+                Visibility.Collapsed;
+
             if (_repairService.IsDiscordRunning())
             {
                 ResultText.Text =
                     "Close Discord before starting a repair.";
+
                 ResultText.Visibility =
                     Visibility.Visible;
 
@@ -89,9 +93,6 @@ public partial class MainWindow : Window
             {
                 return;
             }
-
-            ResultText.Visibility =
-                Visibility.Collapsed;
 
             RepairButton.IsEnabled = false;
             RepairProgressBar.Visibility =
@@ -121,6 +122,31 @@ public partial class MainWindow : Window
                     useOpenAsar,
                     progress);
 
+            if (repairResult.Stage ==
+                VencordRepairStage.OpenAsar &&
+                repairResult.VencordSucceeded)
+            {
+                StatusText.Text =
+                    "Vencord: Patched";
+
+                OpenAsarStatusText.Text =
+                    "OpenAsar: Change failed";
+
+                ResultText.Text =
+                    "Vencord was repaired successfully, but the OpenAsar setting could not be applied.";
+
+                ResultText.Visibility =
+                    Visibility.Visible;
+
+                MessageBox.Show(
+                    repairResult.Message,
+                    "Repair Partially Completed",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Warning);
+
+                return;
+            }
+
             if (!repairResult.Success)
             {
                 StatusText.Text =
@@ -140,7 +166,7 @@ public partial class MainWindow : Window
 
                 MessageBox.Show(
                     $"{repairResult.Message}\n\n{details}",
-                    "Vencord Repair Failed",
+                    "Venguard Repair Failed",
                     MessageBoxButton.OK,
                     MessageBoxImage.Error);
 
@@ -155,6 +181,7 @@ public partial class MainWindow : Window
 
             ResultText.Text =
                 "Repair completed successfully.";
+
             ResultText.Visibility =
                 Visibility.Visible;
 

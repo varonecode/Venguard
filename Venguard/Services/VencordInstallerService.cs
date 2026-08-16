@@ -8,7 +8,7 @@ public sealed class VencordInstallerService
     private static readonly TimeSpan RepairTimeout =
         TimeSpan.FromMinutes(2);
 
-    public async Task<VencordRepairResult> RepairAsync(
+    public async Task<VencordInstallerOperationResult> RepairAsync(
         string installerPath,
         string discordPath,
         IProgress<string>? progress = null,
@@ -16,7 +16,7 @@ public sealed class VencordInstallerService
     {
         if (!File.Exists(installerPath))
         {
-            return new VencordRepairResult(
+            return new VencordInstallerOperationResult(
                 false,
                 "Vencord installer was not found.",
                 string.Empty,
@@ -25,7 +25,7 @@ public sealed class VencordInstallerService
 
         if (!Directory.Exists(discordPath))
         {
-            return new VencordRepairResult(
+            return new VencordInstallerOperationResult(
                 false,
                 "Discord installation was not found.",
                 string.Empty,
@@ -37,7 +37,8 @@ public sealed class VencordInstallerService
 
         try
         {
-            progress?.Report("Starting the official Vencord repair...");
+            progress?.Report(
+                "Starting the official Vencord repair...");
 
             var startInfo = new ProcessStartInfo
             {
@@ -60,11 +61,13 @@ public sealed class VencordInstallerService
                 EnableRaisingEvents = true
             };
 
-            var successDetected = new TaskCompletionSource<bool>(
-                TaskCreationOptions.RunContinuationsAsynchronously);
+            var successDetected =
+                new TaskCompletionSource<bool>(
+                    TaskCreationOptions.RunContinuationsAsynchronously);
 
-            var processExited = new TaskCompletionSource<bool>(
-                TaskCreationOptions.RunContinuationsAsynchronously);
+            var processExited =
+                new TaskCompletionSource<bool>(
+                    TaskCreationOptions.RunContinuationsAsynchronously);
 
             process.OutputDataReceived += (_, args) =>
             {
@@ -113,7 +116,7 @@ public sealed class VencordInstallerService
 
             if (!process.Start())
             {
-                return new VencordRepairResult(
+                return new VencordInstallerOperationResult(
                     false,
                     "Failed to start VencordInstallerCli.exe.",
                     string.Empty,
@@ -123,8 +126,9 @@ public sealed class VencordInstallerService
             process.BeginOutputReadLine();
             process.BeginErrorReadLine();
 
-            using var timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(
-                cancellationToken);
+            using var timeoutCts =
+                CancellationTokenSource.CreateLinkedTokenSource(
+                    cancellationToken);
 
             timeoutCts.CancelAfter(RepairTimeout);
 
@@ -135,31 +139,38 @@ public sealed class VencordInstallerService
             if (completedTask == successDetected.Task)
             {
                 progress?.Report(
-                    "Vencord repair completed successfully.");
+                    "Repair completed. Closing the installer...");
 
-                return new VencordRepairResult(
+                await StopProcessAsync(
+                    process,
+                    timeoutCts.Token);
+
+                return new VencordInstallerOperationResult(
                     true,
                     "Vencord repair completed successfully.",
                     GetOutput(outputLines),
                     GetOutput(errorLines));
             }
 
-            await processExited.Task.WaitAsync(
-                timeoutCts.Token);
+            if (!processExited.Task.IsCompleted)
+            {
+                await processExited.Task.WaitAsync(
+                    timeoutCts.Token);
+            }
 
             if (process.ExitCode == 0)
             {
                 progress?.Report(
                     "Vencord repair completed successfully.");
 
-                return new VencordRepairResult(
+                return new VencordInstallerOperationResult(
                     true,
                     "Vencord repair completed successfully.",
                     GetOutput(outputLines),
                     GetOutput(errorLines));
             }
 
-            return new VencordRepairResult(
+            return new VencordInstallerOperationResult(
                 false,
                 $"Vencord installer exited with code {process.ExitCode}.",
                 GetOutput(outputLines),
@@ -167,7 +178,7 @@ public sealed class VencordInstallerService
         }
         catch (OperationCanceledException)
         {
-            return new VencordRepairResult(
+            return new VencordInstallerOperationResult(
                 false,
                 "Vencord repair timed out or was cancelled.",
                 GetOutput(outputLines),
@@ -175,11 +186,39 @@ public sealed class VencordInstallerService
         }
         catch (Exception ex)
         {
-            return new VencordRepairResult(
+            return new VencordInstallerOperationResult(
                 false,
                 ex.ToString(),
                 GetOutput(outputLines),
                 GetOutput(errorLines));
+        }
+    }
+
+    private static async Task StopProcessAsync(
+        Process process,
+        CancellationToken cancellationToken)
+    {
+        if (process.HasExited)
+        {
+            return;
+        }
+
+        try
+        {
+            process.Kill(entireProcessTree: true);
+        }
+        catch (InvalidOperationException)
+        {
+            return;
+        }
+
+        try
+        {
+            await process.WaitForExitAsync(
+                cancellationToken);
+        }
+        catch (OperationCanceledException)
+        {
         }
     }
 
@@ -195,7 +234,7 @@ public sealed class VencordInstallerService
     }
 }
 
-public sealed record VencordRepairResult(
+public sealed record VencordInstallerOperationResult(
     bool Success,
     string Message,
     string Output,
