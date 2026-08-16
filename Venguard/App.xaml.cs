@@ -21,13 +21,19 @@ public partial class App : Application
     private DiscordLauncherService _discordLauncher = null!;
     private VencordRepairService _repairService = null!;
     private NotificationService _notificationService = null!;
+    private DiscordService _discordService = null!;
+    private VencordInstallerManager _installerManager = null!;
+    private OpenAsarService _openAsarService = null!;
 
     private bool _repairInProgress;
 
     public App()
     {
-        DispatcherUnhandledException += App_DispatcherUnhandledException;
-        AppDomain.CurrentDomain.UnhandledException += App_UnhandledException;
+        DispatcherUnhandledException +=
+            App_DispatcherUnhandledException;
+
+        AppDomain.CurrentDomain.UnhandledException +=
+            App_UnhandledException;
     }
 
     protected override void OnStartup(StartupEventArgs e)
@@ -58,21 +64,33 @@ public partial class App : Application
             _startupService.SetEnabled(_config.AutoStart);
         }
 
-        var discordService = new DiscordService();
-        var installerDownloader = new VencordInstallerDownloader();
-        var installerManager =
-            new VencordInstallerManager(installerDownloader);
-        var installerService = new VencordInstallerService();
+        _discordService = new DiscordService();
+
+        var installerDownloader =
+            new VencordInstallerDownloader();
+
+        _installerManager =
+            new VencordInstallerManager(
+                installerDownloader);
+
+        var installerService =
+            new VencordInstallerService();
 
         _repairService = new VencordRepairService(
-            discordService,
-            installerManager,
+            _discordService,
+            _installerManager,
             installerService);
 
-        _notificationService = new NotificationService();
-        _notificationService.Activated += Notification_Activated;
+        _openAsarService = new OpenAsarService();
 
-        _mainWindow = new MainWindow(_repairService);
+        _notificationService =
+            new NotificationService();
+
+        _notificationService.Activated +=
+            Notification_Activated;
+
+        _mainWindow =
+            new MainWindow(_repairService);
 
         var menu = new ContextMenu();
 
@@ -81,21 +99,24 @@ public partial class App : Application
             Header = "Open Venguard"
         };
 
-        openItem.Click += (_, _) => ShowMainWindow();
+        openItem.Click +=
+            (_, _) => ShowMainWindow();
 
         var settingsItem = new MenuItem
         {
             Header = "Settings"
         };
 
-        settingsItem.Click += (_, _) => ShowSettingsWindow();
+        settingsItem.Click +=
+            (_, _) => ShowSettingsWindow();
 
         var exitItem = new MenuItem
         {
             Header = "Exit Venguard"
         };
 
-        exitItem.Click += (_, _) => Shutdown();
+        exitItem.Click +=
+            (_, _) => Shutdown();
 
         menu.Items.Add(openItem);
         menu.Items.Add(settingsItem);
@@ -109,14 +130,16 @@ public partial class App : Application
             ContextMenu = menu
         };
 
-        _discordMonitor = new DiscordMonitor(
-            discordService,
-            TimeSpan.FromSeconds(10));
+        _discordMonitor =
+            new DiscordMonitor(
+                _discordService,
+                TimeSpan.FromSeconds(10));
 
         _discordMonitor.StatusChanged +=
             DiscordMonitor_StatusChanged;
 
         _mainWindow.Show();
+
         _mainWindow.UpdateDiscordStatus(
             _discordMonitor.CurrentStatus);
 
@@ -135,7 +158,8 @@ public partial class App : Application
             _discordMonitor.Dispose();
         }
 
-        _notificationService.Activated -= Notification_Activated;
+        _notificationService.Activated -=
+            Notification_Activated;
 
         _trayIcon?.Dispose();
 
@@ -267,18 +291,24 @@ public partial class App : Application
             return;
         }
 
-        _settingsWindow = new SettingsWindow(_config)
+        _settingsWindow = new SettingsWindow(
+            _config,
+            _discordService,
+            _installerManager,
+            _openAsarService)
         {
             Owner = _mainWindow
         };
 
         try
         {
-            var result = _settingsWindow.ShowDialog();
+            var result =
+                _settingsWindow.ShowDialog();
 
             if (result == true)
             {
                 _configService!.Save(_config);
+
                 _startupService.SetEnabled(
                     _config.AutoStart);
             }
