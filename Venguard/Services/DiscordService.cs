@@ -15,22 +15,35 @@ public sealed class DiscordService
 
     public DiscordStatus GetStatus()
     {
-        var versionPath = GetDiscordVersionPath();
+        var installation = GetInstallation();
 
-        if (versionPath is null)
+        if (installation is null)
         {
             return new DiscordStatus(false, false, null);
         }
 
-        var appAsarPath = Path.Combine(
-            versionPath,
-            "resources",
-            "_app.asar");
-
         return new DiscordStatus(
             true,
-            File.Exists(appAsarPath),
-            versionPath);
+            File.Exists(installation.VencordAsarPath),
+            installation.VersionPath);
+    }
+
+    public DiscordInstallation? GetInstallation()
+    {
+        var versionPath = GetDiscordVersionPath();
+
+        if (versionPath is null)
+        {
+            return null;
+        }
+
+        var resourcesPath = Path.Combine(versionPath, "resources");
+
+        return new DiscordInstallation(
+            versionPath,
+            resourcesPath,
+            Path.Combine(resourcesPath, "app.asar"),
+            Path.Combine(resourcesPath, "_app.asar"));
     }
 
     private string? GetDiscordVersionPath()
