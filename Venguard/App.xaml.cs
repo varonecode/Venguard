@@ -13,10 +13,10 @@ public partial class App : Application
 {
     private TaskbarIcon? _trayIcon;
     private MainWindow? _mainWindow;
-    private SettingsWindow? _settingsWindow;
     private DiscordMonitor? _discordMonitor;
     private ConfigService? _configService;
     private VenguardConfig? _config;
+
     private StartupService _startupService = null!;
     private DiscordLauncherService _discordLauncher = null!;
     private VencordRepairService _repairService = null!;
@@ -36,14 +36,20 @@ public partial class App : Application
             App_UnhandledException;
     }
 
-    protected override void OnStartup(StartupEventArgs e)
+    protected override void OnStartup(
+        StartupEventArgs e)
     {
         base.OnStartup(e);
 
-        _configService = new ConfigService();
-        _config = _configService.Load();
+        _configService =
+            new ConfigService();
 
-        _startupService = new StartupService();
+        _config =
+            _configService.Load();
+
+        _startupService =
+            new StartupService();
+
         _startupService.SetEnabled(
             _config.AutoStart);
 
@@ -63,7 +69,8 @@ public partial class App : Application
 
             _config.IsFirstRun = false;
 
-            _configService.Save(_config);
+            _configService.Save(
+                _config);
 
             _startupService.SetEnabled(
                 _config.AutoStart);
@@ -100,49 +107,58 @@ public partial class App : Application
 
         _mainWindow =
             new MainWindow(
-                _repairService);
+                _repairService,
+                _config,
+                _configService,
+                _startupService,
+                _discordService,
+                _installerManager,
+                _openAsarService);
 
         var menu =
             new ContextMenu();
 
         var openItem =
-            new MenuItem
-            {
-                Header = "Open Venguard"
-            };
-
-        openItem.Click +=
-            (_, _) => ShowMainWindow();
+            CreateTrayItem(
+                "⌂",
+                "Open Venguard",
+                ShowMainWindow);
 
         var settingsItem =
-            new MenuItem
-            {
-                Header = "Settings"
-            };
-
-        settingsItem.Click +=
-            (_, _) => ShowSettingsWindow();
+            CreateTrayItem(
+                "⚙",
+                "Settings",
+                ShowSettingsWindow);
 
         var exitItem =
-            new MenuItem
-            {
-                Header = "Exit Venguard"
-            };
+            CreateTrayItem(
+                "×",
+                "Exit Venguard",
+                Shutdown);
 
-        exitItem.Click +=
-            (_, _) => Shutdown();
+        menu.Items.Add(
+            openItem);
 
-        menu.Items.Add(openItem);
-        menu.Items.Add(settingsItem);
-        menu.Items.Add(new Separator());
-        menu.Items.Add(exitItem);
+        menu.Items.Add(
+            settingsItem);
+
+        menu.Items.Add(
+            new Separator());
+
+        menu.Items.Add(
+            exitItem);
 
         _trayIcon =
             new TaskbarIcon
             {
-                ToolTipText = "Venguard",
-                Icon = SystemIcons.Application,
-                ContextMenu = menu
+                ToolTipText =
+                    "Venguard",
+
+                Icon =
+                    SystemIcons.Application,
+
+                ContextMenu =
+                    menu
             };
 
         _discordMonitor =
@@ -160,7 +176,8 @@ public partial class App : Application
 
         _discordMonitor.Start();
 
-        _configService.Save(_config);
+        _configService.Save(
+            _config);
     }
 
     protected override void OnExit(
@@ -224,6 +241,37 @@ public partial class App : Application
         }
     }
 
+    private static MenuItem CreateTrayItem(
+        string icon,
+        string header,
+        Action action)
+    {
+        var item =
+            new MenuItem
+            {
+                Header = header
+            };
+
+        item.Icon =
+            new TextBlock
+            {
+                Text = icon,
+                FontFamily =
+                    new System.Windows.Media.FontFamily(
+                        "Segoe UI Symbol"),
+                FontSize = 15,
+                Foreground =
+                    (Application.Current.Resources[
+                        "PurpleBrightBrush"]
+                     as System.Windows.Media.Brush)
+            };
+
+        item.Click +=
+            (_, _) => action();
+
+        return item;
+    }
+
     private void Notification_Activated(
         object? sender,
         string arguments)
@@ -237,12 +285,14 @@ public partial class App : Application
                 Uri.UnescapeDataString(
                     normalized);
 
-            if (decoded == normalized)
+            if (decoded ==
+                normalized)
             {
                 break;
             }
 
-            normalized = decoded;
+            normalized =
+                decoded;
         }
 
         if (!normalized.Contains(
@@ -318,45 +368,12 @@ public partial class App : Application
 
     private void ShowSettingsWindow()
     {
-        if (_config is null)
+        if (_mainWindow is null)
         {
             return;
         }
 
-        if (_settingsWindow is not null)
-        {
-            _settingsWindow.Activate();
-            return;
-        }
-
-        _settingsWindow =
-            new SettingsWindow(
-                _config,
-                _discordService,
-                _installerManager,
-                _openAsarService)
-            {
-                Owner = _mainWindow
-            };
-
-        try
-        {
-            var result =
-                _settingsWindow.ShowDialog();
-
-            if (result == true)
-            {
-                _configService!.Save(
-                    _config);
-
-                _startupService.SetEnabled(
-                    _config.AutoStart);
-            }
-        }
-        finally
-        {
-            _settingsWindow = null;
-        }
+        _mainWindow.ShowSettingsView();
     }
 
     private void App_DispatcherUnhandledException(

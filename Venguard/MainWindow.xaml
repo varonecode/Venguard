@@ -3,14 +3,15 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:shell="clr-namespace:System.Windows.Shell;assembly=PresentationFramework"
         Title="Venguard"
-        Width="620"
-        Height="460"
-        MinWidth="620"
-        MinHeight="460"
+        Width="1100"
+        Height="700"
+        MinWidth="980"
+        MinHeight="620"
         Background="{StaticResource WindowBackgroundBrush}"
         Foreground="{StaticResource ForegroundBrush}"
         WindowStyle="None"
-        ResizeMode="CanResize">
+        ResizeMode="CanResize"
+        ShowInTaskbar="True">
 
     <shell:WindowChrome.WindowChrome>
         <shell:WindowChrome CaptionHeight="0"
@@ -19,121 +20,656 @@
                             UseAeroCaptionButtons="False"/>
     </shell:WindowChrome.WindowChrome>
 
-    <Border Background="{StaticResource WindowBackgroundBrush}"
-            BorderBrush="#333333"
-            BorderThickness="1">
+    <Window.Resources>
 
-        <Grid>
-            <Grid.RowDefinitions>
-                <RowDefinition Height="44"/>
-                <RowDefinition Height="*"/>
-            </Grid.RowDefinitions>
+        <Storyboard x:Key="FloatDot1">
+            <DoubleAnimation Storyboard.TargetName="Dot1Transform"
+                             Storyboard.TargetProperty="Y"
+                             From="0"
+                             To="-32"
+                             Duration="0:0:7"
+                             AutoReverse="True"
+                             RepeatBehavior="Forever"/>
+        </Storyboard>
 
-            <Border Grid.Row="0"
-                    Background="{StaticResource TitleBarBrush}"
-                    MouseLeftButtonDown="TitleBar_MouseLeftButtonDown">
+        <Storyboard x:Key="FloatDot2">
+            <DoubleAnimation Storyboard.TargetName="Dot2Transform"
+                             Storyboard.TargetProperty="Y"
+                             From="0"
+                             To="28"
+                             Duration="0:0:9"
+                             AutoReverse="True"
+                             RepeatBehavior="Forever"/>
+        </Storyboard>
 
-                <Grid>
-                    <TextBlock Margin="16,0,0,0"
-                               VerticalAlignment="Center"
-                               FontSize="14"
-                               FontWeight="SemiBold"
-                               Text="Venguard"/>
+        <Storyboard x:Key="FloatDot3">
+            <DoubleAnimation Storyboard.TargetName="Dot3Transform"
+                             Storyboard.TargetProperty="X"
+                             From="0"
+                             To="24"
+                             Duration="0:0:8"
+                             AutoReverse="True"
+                             RepeatBehavior="Forever"/>
+        </Storyboard>
 
-                    <StackPanel Orientation="Horizontal"
-                                HorizontalAlignment="Right">
+        <Storyboard x:Key="FloatDot4">
+            <DoubleAnimation Storyboard.TargetName="Dot4Transform"
+                             Storyboard.TargetProperty="Y"
+                             From="0"
+                             To="-24"
+                             Duration="0:0:10"
+                             AutoReverse="True"
+                             RepeatBehavior="Forever"/>
+        </Storyboard>
 
-                        <Button Width="46"
-                                Height="44"
-                                Click="MinimizeButton_Click"
-                                Content="—"/>
+        <Storyboard x:Key="FloatDot5">
+            <DoubleAnimation Storyboard.TargetName="Dot5Transform"
+                             Storyboard.TargetProperty="X"
+                             From="0"
+                             To="-30"
+                             Duration="0:0:11"
+                             AutoReverse="True"
+                             RepeatBehavior="Forever"/>
+        </Storyboard>
 
-                        <Button Width="46"
-                                Height="44"
-                                Click="MaximizeButton_Click"
-                                Content="□"/>
+        <Storyboard x:Key="FloatDot6">
+            <DoubleAnimation Storyboard.TargetName="Dot6Transform"
+                             Storyboard.TargetProperty="Y"
+                             From="0"
+                             To="22"
+                             Duration="0:0:6"
+                             AutoReverse="True"
+                             RepeatBehavior="Forever"/>
+        </Storyboard>
 
-                        <Button Width="46"
-                                Height="44"
-                                Click="CloseButton_Click"
-                                Content="×"/>
-                    </StackPanel>
+        <Storyboard x:Key="FloatDot7">
+            <DoubleAnimation Storyboard.TargetName="Dot7Transform"
+                             Storyboard.TargetProperty="X"
+                             From="0"
+                             To="28"
+                             Duration="0:0:12"
+                             AutoReverse="True"
+                             RepeatBehavior="Forever"/>
+        </Storyboard>
+
+        <Storyboard x:Key="FloatDot8">
+            <DoubleAnimation Storyboard.TargetName="Dot8Transform"
+                             Storyboard.TargetProperty="Y"
+                             From="0"
+                             To="-20"
+                             Duration="0:0:8"
+                             AutoReverse="True"
+                             RepeatBehavior="Forever"/>
+        </Storyboard>
+    </Window.Resources>
+
+    <Grid>
+        <!-- Background -->
+        <Rectangle Fill="{StaticResource BackgroundBrush}"/>
+
+        <Canvas IsHitTestVisible="False"
+                Opacity="0.45">
+
+            <Ellipse Width="8"
+                     Height="8"
+                     Fill="{StaticResource PurpleBrightBrush}"
+                     Opacity="0.18"
+                     Canvas.Left="90"
+                     Canvas.Top="160">
+                <Ellipse.RenderTransform>
+                    <TranslateTransform x:Name="Dot1Transform"/>
+                </Ellipse.RenderTransform>
+            </Ellipse>
+
+            <Ellipse Width="5"
+                     Height="5"
+                     Fill="{StaticResource PurpleBrush}"
+                     Opacity="0.28"
+                     Canvas.Left="330"
+                     Canvas.Top="110">
+                <Ellipse.RenderTransform>
+                    <TranslateTransform x:Name="Dot2Transform"/>
+                </Ellipse.RenderTransform>
+            </Ellipse>
+
+            <Ellipse Width="6"
+                     Height="6"
+                     Fill="{StaticResource PurpleBrightBrush}"
+                     Opacity="0.22"
+                     Canvas.Left="700"
+                     Canvas.Top="120">
+                <Ellipse.RenderTransform>
+                    <TranslateTransform x:Name="Dot3Transform"/>
+                </Ellipse.RenderTransform>
+            </Ellipse>
+
+            <Ellipse Width="9"
+                     Height="9"
+                     Fill="{StaticResource PurpleBrush}"
+                     Opacity="0.14"
+                     Canvas.Left="900"
+                     Canvas.Top="250">
+                <Ellipse.RenderTransform>
+                    <TranslateTransform x:Name="Dot4Transform"/>
+                </Ellipse.RenderTransform>
+            </Ellipse>
+
+            <Ellipse Width="5"
+                     Height="5"
+                     Fill="{StaticResource PurpleBrightBrush}"
+                     Opacity="0.25"
+                     Canvas.Left="520"
+                     Canvas.Top="470">
+                <Ellipse.RenderTransform>
+                    <TranslateTransform x:Name="Dot5Transform"/>
+                </Ellipse.RenderTransform>
+            </Ellipse>
+
+            <Ellipse Width="7"
+                     Height="7"
+                     Fill="{StaticResource PurpleBrush}"
+                     Opacity="0.18"
+                     Canvas.Left="180"
+                     Canvas.Top="520">
+                <Ellipse.RenderTransform>
+                    <TranslateTransform x:Name="Dot6Transform"/>
+                </Ellipse.RenderTransform>
+            </Ellipse>
+
+            <Ellipse Width="4"
+                     Height="4"
+                     Fill="{StaticResource PurpleBrightBrush}"
+                     Opacity="0.26"
+                     Canvas.Left="780"
+                     Canvas.Top="540">
+                <Ellipse.RenderTransform>
+                    <TranslateTransform x:Name="Dot7Transform"/>
+                </Ellipse.RenderTransform>
+            </Ellipse>
+
+            <Ellipse Width="7"
+                     Height="7"
+                     Fill="{StaticResource PurpleBrush}"
+                     Opacity="0.16"
+                     Canvas.Left="950"
+                     Canvas.Top="80">
+                <Ellipse.RenderTransform>
+                    <TranslateTransform x:Name="Dot8Transform"/>
+                </Ellipse.RenderTransform>
+            </Ellipse>
+        </Canvas>
+
+        <!-- Main shell -->
+        <Border Margin="14"
+                Background="#CC0E1018"
+                BorderBrush="{StaticResource BorderBrush}"
+                BorderThickness="1"
+                CornerRadius="18">
+
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="56"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+
+                <!-- Custom title bar -->
+                <Border Grid.Row="0"
+                        Background="#A60B0C14"
+                        CornerRadius="18,18,0,0"
+                        MouseLeftButtonDown="TitleBar_MouseLeftButtonDown">
+
+                    <Grid Margin="18,0">
+                        <StackPanel Orientation="Horizontal"
+                                    VerticalAlignment="Center">
+
+                            <Border Width="30"
+                                    Height="30"
+                                    CornerRadius="9"
+                                    Background="{StaticResource PurpleBrush}">
+                                <TextBlock HorizontalAlignment="Center"
+                                           VerticalAlignment="Center"
+                                           FontFamily="Segoe UI Symbol"
+                                           FontSize="15"
+                                           FontWeight="Bold"
+                                           Foreground="White"
+                                           Text="V"/>
+                            </Border>
+
+                            <StackPanel Margin="12,0,0,0">
+                                <TextBlock FontSize="14"
+                                           FontWeight="SemiBold"
+                                           Text="Venguard"/>
+
+                                <TextBlock FontSize="10"
+                                           Foreground="{StaticResource MutedForegroundBrush}"
+                                           Text="Discord protection utility"/>
+                            </StackPanel>
+                        </StackPanel>
+
+                        <StackPanel Orientation="Horizontal"
+                                    HorizontalAlignment="Right"
+                                    VerticalAlignment="Center">
+
+                            <Button Width="34"
+                                    Height="34"
+                                    Margin="4,0"
+                                    Click="MinimizeButton_Click"
+                                    Content="—"
+                                    Style="{StaticResource WindowButtonStyle}"/>
+
+                            <Button Width="34"
+                                    Height="34"
+                                    Margin="4,0"
+                                    Click="MaximizeButton_Click"
+                                    Content="□"
+                                    Style="{StaticResource WindowButtonStyle}"/>
+
+                            <Button Width="34"
+                                    Height="34"
+                                    Margin="4,0"
+                                    Click="CloseButton_Click"
+                                    Content="×"
+                                    Style="{StaticResource WindowButtonStyle}"/>
+                        </StackPanel>
+                    </Grid>
+                </Border>
+
+                <!-- Application body -->
+                <Grid Grid.Row="1">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="210"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+
+                    <!-- Sidebar -->
+                    <Border Grid.Column="0"
+                            Background="#4D0C0D15"
+                            BorderBrush="{StaticResource BorderBrush}"
+                            BorderThickness="0,0,1,0"
+                            CornerRadius="0,0,0,18">
+
+                        <Grid Margin="16,24">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+
+                            <StackPanel>
+                                <TextBlock Margin="8,0,0,10"
+                                           FontSize="10"
+                                           FontWeight="SemiBold"
+                                           Foreground="{StaticResource MutedForegroundBrush}"
+                                           Text="WORKSPACE"/>
+
+                                <Button x:Name="DashboardNavButton"
+                                        Click="DashboardNavButton_Click"
+                                        Style="{StaticResource SidebarButtonStyle}">
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Width="26"
+                                                   FontFamily="Segoe UI Symbol"
+                                                   FontSize="15"
+                                                   Text="⌂"/>
+                                        <TextBlock VerticalAlignment="Center"
+                                                   Text="Dashboard"/>
+                                    </StackPanel>
+                                </Button>
+
+                                <Button x:Name="SettingsNavButton"
+                                        Click="SettingsNavButton_Click"
+                                        Style="{StaticResource SidebarButtonStyle}">
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Width="26"
+                                                   FontFamily="Segoe UI Symbol"
+                                                   FontSize="15"
+                                                   Text="⚙"/>
+                                        <TextBlock VerticalAlignment="Center"
+                                                   Text="Settings"/>
+                                    </StackPanel>
+                                </Button>
+                            </StackPanel>
+
+                            <Border Grid.Row="2"
+                                    Padding="12"
+                                    Background="{StaticResource SurfaceBrush}"
+                                    BorderBrush="{StaticResource BorderBrush}"
+                                    BorderThickness="1"
+                                    CornerRadius="12">
+
+                                <StackPanel>
+                                    <TextBlock FontSize="10"
+                                               Foreground="{StaticResource MutedForegroundBrush}"
+                                               Text="VENGUARD"/>
+
+                                    <TextBlock Margin="0,4,0,0"
+                                               FontSize="12"
+                                               Foreground="{StaticResource SecondaryForegroundBrush}"
+                                               Text="Running normally"/>
+
+                                    <TextBlock Margin="0,8,0,0"
+                                               FontSize="10"
+                                               Foreground="{StaticResource MutedForegroundBrush}"
+                                               Text="System tray enabled"/>
+                                </StackPanel>
+                            </Border>
+                        </Grid>
+                    </Border>
+
+                    <!-- Content -->
+                    <Grid Grid.Column="1"
+                          Margin="34">
+
+                        <!-- Dashboard -->
+                        <Grid x:Name="DashboardView">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
+
+                            <StackPanel>
+                                <TextBlock FontSize="28"
+                                           FontWeight="SemiBold"
+                                           Text="Dashboard"/>
+
+                                <TextBlock Margin="0,6,0,0"
+                                           FontSize="13"
+                                           Foreground="{StaticResource MutedForegroundBrush}"
+                                           Text="Keep Discord patched and ready without the guesswork."/>
+                            </StackPanel>
+
+                            <Grid Grid.Row="1"
+                                  Margin="0,28,0,0">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+
+                                <Border Margin="0,0,8,0"
+                                        Padding="20"
+                                        Background="{StaticResource SurfaceBrush}"
+                                        BorderBrush="{StaticResource BorderBrush}"
+                                        BorderThickness="1"
+                                        CornerRadius="16">
+
+                                    <StackPanel>
+                                        <TextBlock FontSize="10"
+                                                   FontWeight="SemiBold"
+                                                   Foreground="{StaticResource MutedForegroundBrush}"
+                                                   Text="VENCORD"/>
+
+                                        <StackPanel Margin="0,12,0,0"
+                                                    Orientation="Horizontal">
+
+                                            <Ellipse Width="9"
+                                                     Height="9"
+                                                     Fill="{StaticResource SuccessBrush}"
+                                                     VerticalAlignment="Center"/>
+
+                                            <TextBlock x:Name="StatusText"
+                                                       Margin="9,0,0,0"
+                                                       FontSize="18"
+                                                       FontWeight="SemiBold"
+                                                       Text="Checking..."/>
+                                        </StackPanel>
+
+                                        <TextBlock Margin="0,8,0,0"
+                                                   FontSize="11"
+                                                   Foreground="{StaticResource MutedForegroundBrush}"
+                                                   Text="Discord Stable"/>
+                                    </StackPanel>
+                                </Border>
+
+                                <Border Grid.Column="1"
+                                        Margin="8,0,0,0"
+                                        Padding="20"
+                                        Background="{StaticResource SurfaceBrush}"
+                                        BorderBrush="{StaticResource BorderBrush}"
+                                        BorderThickness="1"
+                                        CornerRadius="16">
+
+                                    <StackPanel>
+                                        <TextBlock FontSize="10"
+                                                   FontWeight="SemiBold"
+                                                   Foreground="{StaticResource MutedForegroundBrush}"
+                                                   Text="OPENASAR"/>
+
+                                        <TextBlock x:Name="OpenAsarStatusText"
+                                                   Margin="0,12,0,0"
+                                                   FontSize="18"
+                                                   FontWeight="SemiBold"
+                                                   Text="Checking..."/>
+
+                                        <TextBlock Margin="0,8,0,0"
+                                                   FontSize="11"
+                                                   Foreground="{StaticResource MutedForegroundBrush}"
+                                                   Text="Runtime optimization"/>
+                                    </StackPanel>
+                                </Border>
+                            </Grid>
+
+                            <Border Grid.Row="2"
+                                    Margin="0,22,0,0"
+                                    Padding="26"
+                                    Background="{StaticResource SurfaceBrush}"
+                                    BorderBrush="{StaticResource BorderBrush}"
+                                    BorderThickness="1"
+                                    CornerRadius="18">
+
+                                <Grid>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="*"/>
+                                        <RowDefinition Height="Auto"/>
+                                    </Grid.RowDefinitions>
+
+                                    <StackPanel>
+                                        <TextBlock FontSize="16"
+                                                   FontWeight="SemiBold"
+                                                   Text="Repair center"/>
+
+                                        <TextBlock Margin="0,4,0,0"
+                                                   FontSize="12"
+                                                   Foreground="{StaticResource MutedForegroundBrush}"
+                                                   Text="Use the official Vencord installer to restore the Discord installation."/>
+                                    </StackPanel>
+
+                                    <StackPanel Grid.Row="1"
+                                                HorizontalAlignment="Center"
+                                                VerticalAlignment="Center">
+
+                                        <ProgressBar x:Name="RepairProgressBar"
+                                                     Width="320"
+                                                     Height="7"
+                                                     IsIndeterminate="True"
+                                                     Visibility="Collapsed"/>
+
+                                        <TextBlock x:Name="ProgressText"
+                                                   Width="480"
+                                                   Margin="0,14,0,0"
+                                                   HorizontalAlignment="Center"
+                                                   TextAlignment="Center"
+                                                   TextWrapping="Wrap"
+                                                   FontSize="12"
+                                                   Foreground="{StaticResource MutedForegroundBrush}"
+                                                   Visibility="Collapsed"/>
+
+                                        <TextBlock x:Name="ResultText"
+                                                   Width="480"
+                                                   Margin="0,12,0,0"
+                                                   HorizontalAlignment="Center"
+                                                   TextAlignment="Center"
+                                                   TextWrapping="Wrap"
+                                                   FontSize="12"
+                                                   FontWeight="SemiBold"
+                                                   Foreground="{StaticResource SecondaryForegroundBrush}"
+                                                   Visibility="Collapsed"/>
+                                    </StackPanel>
+
+                                    <StackPanel Grid.Row="2"
+                                                Margin="0,20,0,0"
+                                                HorizontalAlignment="Center"
+                                                Orientation="Horizontal">
+
+                                        <Button x:Name="RepairButton"
+                                                Width="180"
+                                                Height="42"
+                                                Margin="0,0,10,0"
+                                                Click="RepairButton_Click"
+                                                Content="Repair Vencord"
+                                                Style="{StaticResource PrimaryButtonStyle}"/>
+
+                                        <Button x:Name="CancelRepairButton"
+                                                Width="140"
+                                                Height="42"
+                                                Click="CancelRepairButton_Click"
+                                                Content="Cancel"
+                                                Style="{StaticResource SecondaryButtonStyle}"
+                                                Visibility="Collapsed"/>
+                                    </StackPanel>
+                                </Grid>
+                            </Border>
+                        </Grid>
+
+                        <!-- Settings -->
+                        <ScrollViewer x:Name="SettingsView"
+                                      VerticalScrollBarVisibility="Auto"
+                                      Visibility="Collapsed">
+
+                            <StackPanel MaxWidth="760">
+                                <TextBlock FontSize="28"
+                                           FontWeight="SemiBold"
+                                           Text="Settings"/>
+
+                                <TextBlock Margin="0,6,0,26"
+                                           FontSize="13"
+                                           Foreground="{StaticResource MutedForegroundBrush}"
+                                           Text="Configure how Venguard behaves on your system."/>
+
+                                <Border Padding="22"
+                                        Background="{StaticResource SurfaceBrush}"
+                                        BorderBrush="{StaticResource BorderBrush}"
+                                        BorderThickness="1"
+                                        CornerRadius="16">
+
+                                    <StackPanel>
+                                        <TextBlock FontSize="15"
+                                                   FontWeight="SemiBold"
+                                                   Text="General"/>
+
+                                        <TextBlock Margin="0,4,0,20"
+                                                   FontSize="12"
+                                                   Foreground="{StaticResource MutedForegroundBrush}"
+                                                   Text="Startup and repair preferences."/>
+
+                                        <CheckBox x:Name="AutoStartCheckBox"
+                                                  Margin="0,0,0,18"
+                                                  Content="Start Venguard with Windows"
+                                                  Style="{StaticResource ThemedCheckBoxStyle}"/>
+
+                                        <CheckBox x:Name="LaunchDiscordCheckBox"
+                                                  Margin="0,0,0,18"
+                                                  Content="Launch Discord after a successful repair"
+                                                  Style="{StaticResource ThemedCheckBoxStyle}"/>
+
+                                        <CheckBox x:Name="OpenAsarCheckBox"
+                                                  Content="Use OpenAsar when available"
+                                                  Style="{StaticResource ThemedCheckBoxStyle}"/>
+                                    </StackPanel>
+                                </Border>
+
+                                <Border Margin="0,18,0,0"
+                                        Padding="22"
+                                        Background="{StaticResource SurfaceBrush}"
+                                        BorderBrush="{StaticResource BorderBrush}"
+                                        BorderThickness="1"
+                                        CornerRadius="16">
+
+                                    <StackPanel>
+                                        <TextBlock FontSize="15"
+                                                   FontWeight="SemiBold"
+                                                   Text="Repair behavior"/>
+
+                                        <TextBlock Margin="0,4,0,16"
+                                                   FontSize="12"
+                                                   Foreground="{StaticResource MutedForegroundBrush}"
+                                                   Text="Venguard will never silently overwrite a running Discord installation."/>
+
+                                        <Border Padding="14"
+                                                Background="#201C1730"
+                                                BorderBrush="#3B315B"
+                                                BorderThickness="1"
+                                                CornerRadius="10">
+
+                                            <TextBlock FontSize="11"
+                                                       Foreground="{StaticResource SecondaryForegroundBrush}"
+                                                       Text="Tip: close Discord completely before changing OpenAsar settings."/>
+                                        </Border>
+                                    </StackPanel>
+                                </Border>
+
+                                <StackPanel Margin="0,22,0,0"
+                                            HorizontalAlignment="Right"
+                                            Orientation="Horizontal">
+
+                                    <Button Width="100"
+                                            Height="40"
+                                            Margin="0,0,10,0"
+                                            Click="CancelSettingsButton_Click"
+                                            Content="Cancel"
+                                            Style="{StaticResource SecondaryButtonStyle}"/>
+
+                                    <Button Width="100"
+                                            Height="40"
+                                            Click="SaveSettingsButton_Click"
+                                            Content="Save"
+                                            Style="{StaticResource PrimaryButtonStyle}"/>
+                                </StackPanel>
+
+                                <TextBlock x:Name="SettingsResultText"
+                                           Margin="0,14,0,0"
+                                           HorizontalAlignment="Right"
+                                           FontSize="11"
+                                           Foreground="{StaticResource MutedForegroundBrush}"/>
+                            </StackPanel>
+                        </ScrollViewer>
+                    </Grid>
                 </Grid>
-            </Border>
-
-            <Grid Grid.Row="1"
-                  Margin="48">
-
-                <StackPanel HorizontalAlignment="Center"
-                            VerticalAlignment="Center">
-
-                    <TextBlock HorizontalAlignment="Center"
-                               FontSize="30"
-                               FontWeight="SemiBold"
-                               Text="Venguard"/>
-
-                    <TextBlock x:Name="StatusText"
-                               Margin="0,12,0,0"
-                               HorizontalAlignment="Center"
-                               FontSize="15"
-                               FontWeight="SemiBold"
-                               Text="Checking Discord..."/>
-
-                    <TextBlock x:Name="OpenAsarStatusText"
-                               Margin="0,6,0,0"
-                               HorizontalAlignment="Center"
-                               FontSize="14"
-                               Opacity="0.7"
-                               Text="OpenAsar: —"/>
-
-                    <ProgressBar x:Name="RepairProgressBar"
-                                 Width="300"
-                                 Height="6"
-                                 Margin="0,24,0,0"
-                                 IsIndeterminate="True"
-                                 Visibility="Collapsed"/>
-
-                    <TextBlock x:Name="ProgressText"
-                               Width="380"
-                               Margin="0,12,0,0"
-                               HorizontalAlignment="Center"
-                               TextAlignment="Center"
-                               TextWrapping="Wrap"
-                               FontSize="13"
-                               Opacity="0.7"
-                               Visibility="Collapsed"/>
-
-                    <TextBlock x:Name="ResultText"
-                               Width="380"
-                               Margin="0,10,0,0"
-                               HorizontalAlignment="Center"
-                               TextAlignment="Center"
-                               TextWrapping="Wrap"
-                               FontSize="13"
-                               FontWeight="SemiBold"
-                               Opacity="0.9"
-                               Visibility="Collapsed"/>
-
-                    <StackPanel Margin="0,24,0,0"
-                                HorizontalAlignment="Center"
-                                Orientation="Horizontal">
-
-                        <Button x:Name="RepairButton"
-                                Width="180"
-                                Height="40"
-                                Margin="0,0,10,0"
-                                Click="RepairButton_Click"
-                                Content="Repair Vencord"/>
-
-                        <Button x:Name="CancelRepairButton"
-                                Width="140"
-                                Height="40"
-                                Click="CancelRepairButton_Click"
-                                Content="Cancel Repair"
-                                Visibility="Collapsed"/>
-                    </StackPanel>
-                </StackPanel>
             </Grid>
-        </Grid>
-    </Border>
+        </Border>
+    </Grid>
+
+    <Window.Triggers>
+        <EventTrigger RoutedEvent="FrameworkElement.Loaded">
+            <BeginStoryboard Storyboard="{StaticResource FloatDot1}"/>
+        </EventTrigger>
+
+        <EventTrigger RoutedEvent="FrameworkElement.Loaded">
+            <BeginStoryboard Storyboard="{StaticResource FloatDot2}"/>
+        </EventTrigger>
+
+        <EventTrigger RoutedEvent="FrameworkElement.Loaded">
+            <BeginStoryboard Storyboard="{StaticResource FloatDot3}"/>
+        </EventTrigger>
+
+        <EventTrigger RoutedEvent="FrameworkElement.Loaded">
+            <BeginStoryboard Storyboard="{StaticResource FloatDot4}"/>
+        </EventTrigger>
+
+        <EventTrigger RoutedEvent="FrameworkElement.Loaded">
+            <BeginStoryboard Storyboard="{StaticResource FloatDot5}"/>
+        </EventTrigger>
+
+        <EventTrigger RoutedEvent="FrameworkElement.Loaded">
+            <BeginStoryboard Storyboard="{StaticResource FloatDot6}"/>
+        </EventTrigger>
+
+        <EventTrigger RoutedEvent="FrameworkElement.Loaded">
+            <BeginStoryboard Storyboard="{StaticResource FloatDot7}"/>
+        </EventTrigger>
+
+        <EventTrigger RoutedEvent="FrameworkElement.Loaded">
+            <BeginStoryboard Storyboard="{StaticResource FloatDot8}"/>
+        </EventTrigger>
+    </Window.Triggers>
 </Window>

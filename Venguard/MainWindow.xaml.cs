@@ -1,5 +1,7 @@
 ﻿using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Input;
+using Venguard.Config;
 using Venguard.Services;
 
 namespace Venguard;
@@ -7,13 +9,36 @@ namespace Venguard;
 public partial class MainWindow : Window
 {
     private readonly VencordRepairService _repairService;
+    private readonly VenguardConfig _config;
+    private readonly ConfigService _configService;
+    private readonly StartupService _startupService;
+    private readonly DiscordService _discordService;
+    private readonly VencordInstallerManager _installerManager;
+    private readonly OpenAsarService _openAsarService;
+
     private CancellationTokenSource? _repairCancellation;
 
     public MainWindow(
-        VencordRepairService repairService)
+        VencordRepairService repairService,
+        VenguardConfig config,
+        ConfigService configService,
+        StartupService startupService,
+        DiscordService discordService,
+        VencordInstallerManager installerManager,
+        OpenAsarService openAsarService)
     {
-        InitializeComponent();
         _repairService = repairService;
+        _config = config;
+        _configService = configService;
+        _startupService = startupService;
+        _discordService = discordService;
+        _installerManager = installerManager;
+        _openAsarService = openAsarService;
+
+        InitializeComponent();
+
+        LoadSettings();
+        ShowDashboardView();
     }
 
     public void UpdateDiscordStatus(
@@ -21,31 +46,249 @@ public partial class MainWindow : Window
     {
         if (!status.IsInstalled)
         {
-            StatusText.Text =
-                "Discord Stable not found";
-
-            OpenAsarStatusText.Text =
-                "OpenAsar: —";
-
+            StatusText.Text = "Discord not found";
+            OpenAsarStatusText.Text = "Unavailable";
             return;
         }
 
         StatusText.Text =
             status.IsVencordPatched
-                ? "Vencord: Patched"
-                : "Vencord: Not patched";
+                ? "Patched"
+                : "Not patched";
 
         OpenAsarStatusText.Text =
             status.IsOpenAsar
-                ? "OpenAsar: Enabled"
-                : "OpenAsar: Disabled";
+                ? "Enabled"
+                : "Disabled";
     }
 
     public void RequestRepair()
     {
+        ShowDashboardView();
+
         RepairButton_Click(
             this,
             new RoutedEventArgs());
+    }
+
+    public void ShowSettingsView()
+    {
+        LoadSettings();
+        ShowSettingsViewInternal();
+        Activate();
+    }
+
+    private void ShowDashboardView()
+    {
+        DashboardView.Visibility =
+            Visibility.Visible;
+
+        SettingsView.Visibility =
+            Visibility.Collapsed;
+
+        SetNavigationState(
+            DashboardNavButton,
+            true);
+
+        SetNavigationState(
+            SettingsNavButton,
+            false);
+    }
+
+    private void ShowSettingsViewInternal()
+    {
+        DashboardView.Visibility =
+            Visibility.Collapsed;
+
+        SettingsView.Visibility =
+            Visibility.Visible;
+
+        SetNavigationState(
+            DashboardNavButton,
+            false);
+
+        SetNavigationState(
+            SettingsNavButton,
+            true);
+    }
+
+    private static void SetNavigationState(
+        Button button,
+        bool selected)
+    {
+        button.Background =
+            selected
+                ? Application.Current.Resources[
+                    "SurfaceElevatedBrush"]
+                    as System.Windows.Media.Brush
+                : System.Windows.Media.Brushes.Transparent;
+
+        button.Foreground =
+            selected
+                ? Application.Current.Resources[
+                    "PurpleBrightBrush"]
+                    as System.Windows.Media.Brush
+                : Application.Current.Resources[
+                    "MutedForegroundBrush"]
+                    as System.Windows.Media.Brush;
+    }
+
+    private void LoadSettings()
+    {
+        AutoStartCheckBox.IsChecked =
+            _config.AutoStart;
+
+        LaunchDiscordCheckBox.IsChecked =
+            _config.LaunchDiscordAfterPatch;
+
+        OpenAsarCheckBox.IsChecked =
+            _config.UseOpenAsar;
+
+        SettingsResultText.Text =
+            string.Empty;
+    }
+
+    private async void SaveSettingsButton_Click(
+        object sender,
+        RoutedEventArgs e)
+    {
+        try
+        {
+            var newAutoStart =
+                AutoStartCheckBox.IsChecked == true;
+
+            var newLaunchDiscord =
+                LaunchDiscordCheckBox.IsChecked == true;
+
+            var newUseOpenAsar =
+                OpenAsarCheckBox.IsChecked == true;
+
+            if (newUseOpenAsar !=
+                _config.UseOpenAsar)
+            {
+                var installation =
+                    _discordService.GetInstallation();
+
+                if (installation is null)
+                {
+                    SettingsResultText.Text =
+                        "Discord Stable was not found.";
+
+                    return;
+                }
+
+                if (_discordService.IsDiscordRunning())
+                {
+                    SettingsResultText.Text =
+                        "Close Discord before changing OpenAsar.";
+
+                    return;
+                }
+
+                var confirmation =
+                    MessageBox.Show(
+                        newUseOpenAsar
+                            ? "Install OpenAsar using the official Vencord installer?"
+                            : "Remove OpenAsar using the official Vencord installer?",
+                        newUseOpenAsar
+                            ? "Install OpenAsar"
+                            : "Remove OpenAsar",
+                        MessageBoxButton.YesNo,
+                        MessageBoxImage.Question);
+
+                if (confirmation !=
+                    MessageBoxResult.Yes)
+                {
+                    return;
+                }
+
+                SettingsResultText.Text =
+                    newUseOpenAsar
+                        ? "Installing OpenAsar..."
+                        : "Removing OpenAsar...";
+
+                var installerPath =
+                    await _installerManager
+                        .GetInstallerAsync();
+
+                var openAsarResult =
+                    await _openAsarService
+                        .SetEnabledAsync(
+                            installerPath,
+                            installation.DiscordPath,
+                            newUseOpenAsar);
+
+                if (!openAsarResult.Success)
+                {
+                    SettingsResultText.Text =
+                        openAsarResult.Message;
+
+                    return;
+                }
+
+                SettingsResultText.Text =
+                    newUseOpenAsar
+                        ? "OpenAsar enabled."
+                        : "OpenAsar disabled.";
+            }
+
+            _config.AutoStart =
+                newAutoStart;
+
+            _config.LaunchDiscordAfterPatch =
+                newLaunchDiscord;
+
+            _config.UseOpenAsar =
+                newUseOpenAsar;
+
+            _configService.Save(
+                _config);
+
+            _startupService.SetEnabled(
+                _config.AutoStart);
+
+            UpdateDiscordStatus(
+                _discordService.GetStatus());
+
+            SettingsResultText.Text =
+                "Settings saved.";
+        }
+        catch (Exception ex)
+        {
+            SettingsResultText.Text =
+                "Could not save settings.";
+
+            MessageBox.Show(
+                ex.ToString(),
+                "Venguard Settings",
+                MessageBoxButton.OK,
+                MessageBoxImage.Error);
+        }
+    }
+
+    private void CancelSettingsButton_Click(
+        object sender,
+        RoutedEventArgs e)
+    {
+        LoadSettings();
+
+        SettingsResultText.Text =
+            "Changes discarded.";
+    }
+
+    private void DashboardNavButton_Click(
+        object sender,
+        RoutedEventArgs e)
+    {
+        ShowDashboardView();
+    }
+
+    private void SettingsNavButton_Click(
+        object sender,
+        RoutedEventArgs e)
+    {
+        LoadSettings();
+        ShowSettingsViewInternal();
     }
 
     private async void RepairButton_Click(
@@ -90,13 +333,15 @@ public partial class MainWindow : Window
                 return;
             }
 
-            var confirmation = MessageBox.Show(
-                "Venguard will use the official Vencord installer to repair Discord.",
-                "Repair Vencord",
-                MessageBoxButton.YesNo,
-                MessageBoxImage.Question);
+            var confirmation =
+                MessageBox.Show(
+                    "Venguard will use the official Vencord installer to repair Discord.",
+                    "Repair Vencord",
+                    MessageBoxButton.YesNo,
+                    MessageBoxImage.Question);
 
-            if (confirmation != MessageBoxResult.Yes)
+            if (confirmation !=
+                MessageBoxResult.Yes)
             {
                 return;
             }
@@ -104,12 +349,14 @@ public partial class MainWindow : Window
             _repairCancellation =
                 new CancellationTokenSource();
 
-            RepairButton.IsEnabled = false;
+            RepairButton.IsEnabled =
+                false;
 
             CancelRepairButton.Visibility =
                 Visibility.Visible;
 
-            CancelRepairButton.IsEnabled = true;
+            CancelRepairButton.IsEnabled =
+                true;
 
             RepairProgressBar.Visibility =
                 Visibility.Visible;
@@ -121,10 +368,10 @@ public partial class MainWindow : Window
                 "Preparing repair...";
 
             StatusText.Text =
-                "Repairing Vencord...";
+                "Repairing...";
 
             var useOpenAsar =
-                ReadUseOpenAsarSetting();
+                _config.UseOpenAsar;
 
             var cancellationToken =
                 _repairCancellation.Token;
@@ -133,21 +380,23 @@ public partial class MainWindow : Window
                 new Progress<string>(
                     message =>
                     {
-                        if (!cancellationToken.IsCancellationRequested)
+                        if (!cancellationToken
+                            .IsCancellationRequested)
                         {
-                            ProgressText.Text = message;
+                            ProgressText.Text =
+                                message;
                         }
                     });
 
             var repairResult =
-                await _repairService.RepairAsync(
-                    useOpenAsar,
-                    progress,
-                    cancellationToken);
+                await _repairService
+                    .RepairAsync(
+                        useOpenAsar,
+                        progress,
+                        cancellationToken);
 
-            // Cancellation always wins over a near-simultaneous
-            // success result from the installer.
-            if (cancellationToken.IsCancellationRequested)
+            if (cancellationToken
+                .IsCancellationRequested)
             {
                 StatusText.Text =
                     "Repair cancelled";
@@ -166,13 +415,13 @@ public partial class MainWindow : Window
                 repairResult.VencordSucceeded)
             {
                 StatusText.Text =
-                    "Vencord: Patched";
+                    "Patched";
 
                 OpenAsarStatusText.Text =
-                    "OpenAsar: Change failed";
+                    "Change failed";
 
                 ResultText.Text =
-                    "Vencord was repaired successfully, but the OpenAsar setting could not be applied.";
+                    "Vencord was repaired, but the OpenAsar setting could not be applied.";
 
                 ResultText.Visibility =
                     Visibility.Visible;
@@ -189,7 +438,7 @@ public partial class MainWindow : Window
             if (!repairResult.Success)
             {
                 StatusText.Text =
-                    "Vencord repair failed";
+                    "Repair failed";
 
                 ResultText.Text =
                     repairResult.Message;
@@ -212,13 +461,8 @@ public partial class MainWindow : Window
                 return;
             }
 
-            StatusText.Text =
-                "Vencord: Patched";
-
-            OpenAsarStatusText.Text =
-                useOpenAsar
-                    ? "OpenAsar: Enabled"
-                    : "OpenAsar: Disabled";
+            UpdateDiscordStatus(
+                _discordService.GetStatus());
 
             ProgressText.Text =
                 "Repair completed successfully.";
@@ -245,7 +489,7 @@ public partial class MainWindow : Window
         catch (Exception ex)
         {
             StatusText.Text =
-                "Vencord repair failed";
+                "Repair failed";
 
             ResultText.Text =
                 "Repair failed.";
@@ -270,7 +514,7 @@ public partial class MainWindow : Window
                 Visibility.Collapsed;
 
             ProgressText.Visibility =
-                Visibility.Collapsed;
+                Visibility.Visible;
 
             CancelRepairButton.Visibility =
                 Visibility.Collapsed;
@@ -299,17 +543,6 @@ public partial class MainWindow : Window
 
         ProgressText.Text =
             "Cancelling repair...";
-    }
-
-    private static bool ReadUseOpenAsarSetting()
-    {
-        var configService =
-            new Config.ConfigService();
-
-        var config =
-            configService.Load();
-
-        return config.UseOpenAsar;
     }
 
     private void TitleBar_MouseLeftButtonDown(
