@@ -75,11 +75,19 @@
             </Border>
 
             <Grid Grid.Row="1">
-                <TextBlock HorizontalAlignment="Center"
-                           VerticalAlignment="Center"
-                           FontSize="24"
-                           FontWeight="SemiBold"
-                           Text="Venguard"/>
+                <StackPanel HorizontalAlignment="Center"
+                            VerticalAlignment="Center">
+                    <TextBlock HorizontalAlignment="Center"
+                            FontSize="24"
+                            FontWeight="SemiBold"
+                            Text="Venguard"/>
+
+                    <TextBlock x:Name="StatusText"
+                            Margin="0,12,0,0"
+                            HorizontalAlignment="Center"
+                            FontSize="14"
+                            Opacity="0.7"/>
+                </StackPanel>
             </Grid>
         </Grid>
     </Border>
