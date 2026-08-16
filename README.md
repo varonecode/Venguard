@@ -180,4 +180,4 @@ Contributions are welcome. When submitting changes:
 
 ## License
 
-No license file was provided with this project. Please check the repository for license information.
+Venguard is licensed under the MIT License. See [LICENSE](LICENSE) for the full license text.
