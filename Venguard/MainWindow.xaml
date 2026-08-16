@@ -4,9 +4,9 @@
         xmlns:shell="clr-namespace:System.Windows.Shell;assembly=PresentationFramework"
         Title="Venguard"
         Width="620"
-        Height="420"
+        Height="460"
         MinWidth="620"
-        MinHeight="420"
+        MinHeight="460"
         Background="{StaticResource WindowBackgroundBrush}"
         Foreground="{StaticResource ForegroundBrush}"
         WindowStyle="None"
@@ -114,12 +114,24 @@
                                Opacity="0.9"
                                Visibility="Collapsed"/>
 
-                    <Button x:Name="RepairButton"
-                            Width="180"
-                            Height="40"
-                            Margin="0,24,0,0"
-                            Click="RepairButton_Click"
-                            Content="Repair Vencord"/>
+                    <StackPanel Margin="0,24,0,0"
+                                HorizontalAlignment="Center"
+                                Orientation="Horizontal">
+
+                        <Button x:Name="RepairButton"
+                                Width="180"
+                                Height="40"
+                                Margin="0,0,10,0"
+                                Click="RepairButton_Click"
+                                Content="Repair Vencord"/>
+
+                        <Button x:Name="CancelRepairButton"
+                                Width="140"
+                                Height="40"
+                                Click="CancelRepairButton_Click"
+                                Content="Cancel Repair"
+                                Visibility="Collapsed"/>
+                    </StackPanel>
                 </StackPanel>
             </Grid>
         </Grid>

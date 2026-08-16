@@ -7,6 +7,7 @@ namespace Venguard;
 public partial class MainWindow : Window
 {
     private readonly VencordRepairService _repairService;
+    private CancellationTokenSource? _repairCancellation;
 
     public MainWindow(
         VencordRepairService repairService)
@@ -61,6 +62,12 @@ public partial class MainWindow : Window
             return;
         }
 
+        if (_repairCancellation is not null)
+        {
+            app.CompleteRepair(false);
+            return;
+        }
+
         try
         {
             ResultText.Visibility =
@@ -83,20 +90,30 @@ public partial class MainWindow : Window
                 return;
             }
 
-            var result = MessageBox.Show(
+            var confirmation = MessageBox.Show(
                 "Venguard will use the official Vencord installer to repair Discord.",
                 "Repair Vencord",
                 MessageBoxButton.YesNo,
                 MessageBoxImage.Question);
 
-            if (result != MessageBoxResult.Yes)
+            if (confirmation != MessageBoxResult.Yes)
             {
                 return;
             }
 
+            _repairCancellation =
+                new CancellationTokenSource();
+
             RepairButton.IsEnabled = false;
+
+            CancelRepairButton.Visibility =
+                Visibility.Visible;
+
+            CancelRepairButton.IsEnabled = true;
+
             RepairProgressBar.Visibility =
                 Visibility.Visible;
+
             ProgressText.Visibility =
                 Visibility.Visible;
 
@@ -109,18 +126,40 @@ public partial class MainWindow : Window
             var useOpenAsar =
                 ReadUseOpenAsarSetting();
 
+            var cancellationToken =
+                _repairCancellation.Token;
+
             var progress =
                 new Progress<string>(
                     message =>
                     {
-                        ProgressText.Text =
-                            message;
+                        if (!cancellationToken.IsCancellationRequested)
+                        {
+                            ProgressText.Text = message;
+                        }
                     });
 
             var repairResult =
                 await _repairService.RepairAsync(
                     useOpenAsar,
-                    progress);
+                    progress,
+                    cancellationToken);
+
+            // Cancellation always wins over a near-simultaneous
+            // success result from the installer.
+            if (cancellationToken.IsCancellationRequested)
+            {
+                StatusText.Text =
+                    "Repair cancelled";
+
+                ResultText.Text =
+                    "Repair was cancelled.";
+
+                ResultText.Visibility =
+                    Visibility.Visible;
+
+                return;
+            }
 
             if (repairResult.Stage ==
                 VencordRepairStage.OpenAsar &&
@@ -176,6 +215,11 @@ public partial class MainWindow : Window
             StatusText.Text =
                 "Vencord: Patched";
 
+            OpenAsarStatusText.Text =
+                useOpenAsar
+                    ? "OpenAsar: Enabled"
+                    : "OpenAsar: Disabled";
+
             ProgressText.Text =
                 "Repair completed successfully.";
 
@@ -186,6 +230,17 @@ public partial class MainWindow : Window
                 Visibility.Visible;
 
             app.CompleteRepair(true);
+        }
+        catch (OperationCanceledException)
+        {
+            StatusText.Text =
+                "Repair cancelled";
+
+            ResultText.Text =
+                "Repair was cancelled.";
+
+            ResultText.Visibility =
+                Visibility.Visible;
         }
         catch (Exception ex)
         {
@@ -206,6 +261,9 @@ public partial class MainWindow : Window
         }
         finally
         {
+            _repairCancellation?.Dispose();
+            _repairCancellation = null;
+
             app.CompleteRepair(false);
 
             RepairProgressBar.Visibility =
@@ -214,8 +272,33 @@ public partial class MainWindow : Window
             ProgressText.Visibility =
                 Visibility.Collapsed;
 
-            RepairButton.IsEnabled = true;
+            CancelRepairButton.Visibility =
+                Visibility.Collapsed;
+
+            CancelRepairButton.IsEnabled =
+                true;
+
+            RepairButton.IsEnabled =
+                true;
         }
+    }
+
+    private void CancelRepairButton_Click(
+        object sender,
+        RoutedEventArgs e)
+    {
+        if (_repairCancellation is null)
+        {
+            return;
+        }
+
+        _repairCancellation.Cancel();
+
+        CancelRepairButton.IsEnabled =
+            false;
+
+        ProgressText.Text =
+            "Cancelling repair...";
     }
 
     private static bool ReadUseOpenAsarSetting()

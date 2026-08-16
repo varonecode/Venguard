@@ -134,7 +134,25 @@ public sealed class VencordInstallerService
 
             var completedTask = await Task.WhenAny(
                 successDetected.Task,
-                processExited.Task);
+                processExited.Task,
+                Task.Delay(
+                    Timeout.InfiniteTimeSpan,
+                    timeoutCts.Token));
+
+            if (cancellationToken.IsCancellationRequested)
+            {
+                progress?.Report(
+                    "Cancelling the Vencord repair...");
+
+                await StopProcessAsync(
+                    process);
+
+                return new VencordInstallerOperationResult(
+                    false,
+                    "Vencord repair was cancelled.",
+                    GetOutput(outputLines),
+                    GetOutput(errorLines));
+            }
 
             if (completedTask == successDetected.Task)
             {
@@ -142,8 +160,7 @@ public sealed class VencordInstallerService
                     "Repair completed. Closing the installer...");
 
                 await StopProcessAsync(
-                    process,
-                    timeoutCts.Token);
+                    process);
 
                 return new VencordInstallerOperationResult(
                     true,
@@ -155,7 +172,19 @@ public sealed class VencordInstallerService
             if (!processExited.Task.IsCompleted)
             {
                 await processExited.Task.WaitAsync(
-                    timeoutCts.Token);
+                    cancellationToken);
+            }
+
+            if (cancellationToken.IsCancellationRequested)
+            {
+                await StopProcessAsync(
+                    process);
+
+                return new VencordInstallerOperationResult(
+                    false,
+                    "Vencord repair was cancelled.",
+                    GetOutput(outputLines),
+                    GetOutput(errorLines));
             }
 
             if (process.ExitCode == 0)
@@ -180,7 +209,7 @@ public sealed class VencordInstallerService
         {
             return new VencordInstallerOperationResult(
                 false,
-                "Vencord repair timed out or was cancelled.",
+                "Vencord repair was cancelled.",
                 GetOutput(outputLines),
                 GetOutput(errorLines));
         }
@@ -195,8 +224,7 @@ public sealed class VencordInstallerService
     }
 
     private static async Task StopProcessAsync(
-        Process process,
-        CancellationToken cancellationToken)
+        Process process)
     {
         if (process.HasExited)
         {
@@ -214,10 +242,9 @@ public sealed class VencordInstallerService
 
         try
         {
-            await process.WaitForExitAsync(
-                cancellationToken);
+            await process.WaitForExitAsync();
         }
-        catch (OperationCanceledException)
+        catch
         {
         }
     }
