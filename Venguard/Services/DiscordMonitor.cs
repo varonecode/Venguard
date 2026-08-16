@@ -6,7 +6,9 @@ public sealed class DiscordMonitor : IDisposable
 {
     private readonly DiscordService _discordService;
     private readonly System.Timers.Timer _timer;
+
     private bool _hasPublishedInitialStatus;
+    private bool _started;
 
     public DiscordStatus CurrentStatus { get; private set; }
 
@@ -17,25 +19,50 @@ public sealed class DiscordMonitor : IDisposable
         TimeSpan interval)
     {
         _discordService = discordService;
-        CurrentStatus = _discordService.GetStatus();
 
-        _timer = new System.Timers.Timer(interval.TotalMilliseconds);
+        CurrentStatus =
+            _discordService.GetStatus();
+
+        _timer =
+            new System.Timers.Timer(
+                interval.TotalMilliseconds)
+            {
+                AutoReset = true
+            };
+
         _timer.Elapsed += Timer_Elapsed;
     }
 
     public void Start()
     {
+        if (_started)
+        {
+            return;
+        }
+
+        _started = true;
+
         CheckStatus();
+
         _timer.Start();
     }
 
     public void Stop()
     {
+        if (!_started)
+        {
+            return;
+        }
+
+        _started = false;
         _timer.Stop();
     }
 
     public void Dispose()
     {
+        Stop();
+
+        _timer.Elapsed -= Timer_Elapsed;
         _timer.Dispose();
     }
 
@@ -48,13 +75,27 @@ public sealed class DiscordMonitor : IDisposable
 
     private void CheckStatus()
     {
-        var status = _discordService.GetStatus();
+        DiscordStatus status;
+
+        try
+        {
+            status =
+                _discordService.GetStatus();
+        }
+        catch
+        {
+            return;
+        }
 
         if (!_hasPublishedInitialStatus)
         {
             _hasPublishedInitialStatus = true;
             CurrentStatus = status;
-            StatusChanged?.Invoke(this, status);
+
+            StatusChanged?.Invoke(
+                this,
+                status);
+
             return;
         }
 
@@ -64,6 +105,9 @@ public sealed class DiscordMonitor : IDisposable
         }
 
         CurrentStatus = status;
-        StatusChanged?.Invoke(this, status);
+
+        StatusChanged?.Invoke(
+            this,
+            status);
     }
 }
