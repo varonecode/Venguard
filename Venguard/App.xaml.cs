@@ -44,13 +44,16 @@ public partial class App : Application
         _config = _configService.Load();
 
         _startupService = new StartupService();
-        _startupService.SetEnabled(_config.AutoStart);
+        _startupService.SetEnabled(
+            _config.AutoStart);
 
-        _discordLauncher = new DiscordLauncherService();
+        _discordLauncher =
+            new DiscordLauncherService();
 
         if (_config.IsFirstRun)
         {
-            var wizard = new FirstRunWindow(_config);
+            var wizard =
+                new FirstRunWindow(_config);
 
             if (wizard.ShowDialog() != true)
             {
@@ -59,13 +62,15 @@ public partial class App : Application
             }
 
             _config.IsFirstRun = false;
+
             _configService.Save(_config);
 
             _startupService.SetEnabled(
                 _config.AutoStart);
         }
 
-        _discordService = new DiscordService();
+        _discordService =
+            new DiscordService();
 
         var installerDownloader =
             new VencordInstallerDownloader();
@@ -94,30 +99,35 @@ public partial class App : Application
             Notification_Activated;
 
         _mainWindow =
-            new MainWindow(_repairService);
+            new MainWindow(
+                _repairService);
 
-        var menu = new ContextMenu();
+        var menu =
+            new ContextMenu();
 
-        var openItem = new MenuItem
-        {
-            Header = "Open Venguard"
-        };
+        var openItem =
+            new MenuItem
+            {
+                Header = "Open Venguard"
+            };
 
         openItem.Click +=
             (_, _) => ShowMainWindow();
 
-        var settingsItem = new MenuItem
-        {
-            Header = "Settings"
-        };
+        var settingsItem =
+            new MenuItem
+            {
+                Header = "Settings"
+            };
 
         settingsItem.Click +=
             (_, _) => ShowSettingsWindow();
 
-        var exitItem = new MenuItem
-        {
-            Header = "Exit Venguard"
-        };
+        var exitItem =
+            new MenuItem
+            {
+                Header = "Exit Venguard"
+            };
 
         exitItem.Click +=
             (_, _) => Shutdown();
@@ -127,12 +137,13 @@ public partial class App : Application
         menu.Items.Add(new Separator());
         menu.Items.Add(exitItem);
 
-        _trayIcon = new TaskbarIcon
-        {
-            ToolTipText = "Venguard",
-            Icon = SystemIcons.Application,
-            ContextMenu = menu
-        };
+        _trayIcon =
+            new TaskbarIcon
+            {
+                ToolTipText = "Venguard",
+                Icon = SystemIcons.Application,
+                ContextMenu = menu
+            };
 
         _discordMonitor =
             new DiscordMonitor(
@@ -152,7 +163,8 @@ public partial class App : Application
         _configService.Save(_config);
     }
 
-    protected override void OnExit(ExitEventArgs e)
+    protected override void OnExit(
+        ExitEventArgs e)
     {
         if (_discordMonitor is not null)
         {
@@ -178,10 +190,12 @@ public partial class App : Application
         }
 
         _repairInProgress = true;
+
         return true;
     }
 
-    public void CompleteRepair(bool success)
+    public void CompleteRepair(
+        bool success)
     {
         _repairInProgress = false;
 
@@ -196,7 +210,15 @@ public partial class App : Application
         _mainWindow?.UpdateDiscordStatus(
             currentStatus);
 
-        if (_config?.LaunchDiscordAfterPatch == true)
+        if (currentStatus.IsInstalled &&
+            currentStatus.IsVencordPatched)
+        {
+            _notificationService
+                .ResetRepairNotificationCooldown();
+        }
+
+        if (_config?.LaunchDiscordAfterPatch ==
+            true)
         {
             _discordLauncher.Launch();
         }
@@ -206,12 +228,14 @@ public partial class App : Application
         object? sender,
         string arguments)
     {
-        var normalized = arguments;
+        var normalized =
+            arguments;
 
         for (var i = 0; i < 3; i++)
         {
             var decoded =
-                Uri.UnescapeDataString(normalized);
+                Uri.UnescapeDataString(
+                    normalized);
 
             if (decoded == normalized)
             {
@@ -238,6 +262,7 @@ public partial class App : Application
                 }
 
                 ShowMainWindow();
+
                 _mainWindow?.RequestRepair();
             }));
     }
@@ -248,7 +273,15 @@ public partial class App : Application
     {
         Dispatcher.Invoke(() =>
         {
-            _mainWindow?.UpdateDiscordStatus(status);
+            _mainWindow?.UpdateDiscordStatus(
+                status);
+
+            if (status.IsInstalled &&
+                status.IsVencordPatched)
+            {
+                _notificationService
+                    .ResetRepairNotificationCooldown();
+            }
 
             if (_repairInProgress)
             {
@@ -258,7 +291,8 @@ public partial class App : Application
             if (status.IsInstalled &&
                 !status.IsVencordPatched)
             {
-                _notificationService.ShowRepairNeeded();
+                _notificationService
+                    .ShowRepairNeeded();
             }
         });
     }
@@ -295,14 +329,15 @@ public partial class App : Application
             return;
         }
 
-        _settingsWindow = new SettingsWindow(
-            _config,
-            _discordService,
-            _installerManager,
-            _openAsarService)
-        {
-            Owner = _mainWindow
-        };
+        _settingsWindow =
+            new SettingsWindow(
+                _config,
+                _discordService,
+                _installerManager,
+                _openAsarService)
+            {
+                Owner = _mainWindow
+            };
 
         try
         {
@@ -311,7 +346,8 @@ public partial class App : Application
 
             if (result == true)
             {
-                _configService!.Save(_config);
+                _configService!.Save(
+                    _config);
 
                 _startupService.SetEnabled(
                     _config.AutoStart);
@@ -358,12 +394,14 @@ public partial class App : Application
     {
         try
         {
-            var directory = Path.Combine(
-                Environment.GetFolderPath(
-                    Environment.SpecialFolder.ApplicationData),
-                "Venguard");
+            var directory =
+                Path.Combine(
+                    Environment.GetFolderPath(
+                        Environment.SpecialFolder.ApplicationData),
+                    "Venguard");
 
-            Directory.CreateDirectory(directory);
+            Directory.CreateDirectory(
+                directory);
 
             File.AppendAllText(
                 Path.Combine(
