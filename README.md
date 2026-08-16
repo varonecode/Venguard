@@ -1,4 +1,6 @@
-<img width="256" height="256" alt="Gemini_Generated_Image_i85xn6i85xn6i85x" src="https://github.com/user-attachments/assets/752544c1-f39f-40b3-be0b-84722669241c" />
+<p align="center">
+  <img width="256" height="256" alt="Gemini_Generated_Image_i85xn6i85xn6i85x" src="https://github.com/user-attachments/assets/752544c1-f39f-40b3-be0b-84722669241c" />
+</p>
 
 # Venguard
 
