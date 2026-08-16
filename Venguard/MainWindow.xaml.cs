@@ -41,7 +41,7 @@ public partial class MainWindow : Window
 
     private void MinimizeButton_Click(object sender, RoutedEventArgs e)
     {
-        WindowState = WindowState.Minimized;
+        Hide();
     }
 
     private void MaximizeButton_Click(object sender, RoutedEventArgs e)
@@ -51,7 +51,7 @@ public partial class MainWindow : Window
 
     private void CloseButton_Click(object sender, RoutedEventArgs e)
     {
-        Close();
+        Hide();
     }
 
     private void ToggleMaximize()
