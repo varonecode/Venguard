@@ -6,6 +6,7 @@ public sealed class DiscordMonitor : IDisposable
 {
     private readonly DiscordService _discordService;
     private readonly System.Timers.Timer _timer;
+    private bool _hasPublishedInitialStatus;
 
     public DiscordStatus CurrentStatus { get; private set; }
 
@@ -38,7 +39,9 @@ public sealed class DiscordMonitor : IDisposable
         _timer.Dispose();
     }
 
-    private void Timer_Elapsed(object? sender, ElapsedEventArgs e)
+    private void Timer_Elapsed(
+        object? sender,
+        ElapsedEventArgs e)
     {
         CheckStatus();
     }
@@ -46,6 +49,14 @@ public sealed class DiscordMonitor : IDisposable
     private void CheckStatus()
     {
         var status = _discordService.GetStatus();
+
+        if (!_hasPublishedInitialStatus)
+        {
+            _hasPublishedInitialStatus = true;
+            CurrentStatus = status;
+            StatusChanged?.Invoke(this, status);
+            return;
+        }
 
         if (status == CurrentStatus)
         {
