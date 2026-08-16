@@ -28,10 +28,12 @@ public sealed class VencordInstallerManager
     }
 
     public async Task<string> GetInstallerAsync(
+        IProgress<string>? progress = null,
         CancellationToken cancellationToken = default)
     {
         if (IsInstalled())
         {
+            progress?.Report("Using cached Vencord installer.");
             return _installerPath;
         }
 
@@ -39,6 +41,7 @@ public sealed class VencordInstallerManager
 
         var downloadedPath = await _downloader.DownloadAsync(
             _installerDirectory,
+            progress,
             cancellationToken);
 
         if (!string.Equals(
@@ -46,7 +49,11 @@ public sealed class VencordInstallerManager
                 _installerPath,
                 StringComparison.OrdinalIgnoreCase))
         {
-            File.Copy(downloadedPath, _installerPath, true);
+            File.Copy(
+                downloadedPath,
+                _installerPath,
+                true);
+
             File.Delete(downloadedPath);
         }
 

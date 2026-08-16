@@ -22,8 +22,11 @@ public sealed class VencordRepairService
     }
 
     public async Task<VencordRepairResult> RepairAsync(
+        IProgress<string>? progress = null,
         CancellationToken cancellationToken = default)
     {
+        progress?.Report("Checking the Discord installation...");
+
         var installation = _discordService.GetInstallation();
 
         if (installation is null)
@@ -36,11 +39,13 @@ public sealed class VencordRepairService
         }
 
         var installerPath = await _installerManager.GetInstallerAsync(
+            progress,
             cancellationToken);
 
         return await _installerService.RepairAsync(
             installerPath,
             installation.DiscordPath,
+            progress,
             cancellationToken);
     }
 }

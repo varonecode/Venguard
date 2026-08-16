@@ -16,12 +16,17 @@ public sealed class VencordInstallerDownloader
 
     public VencordInstallerDownloader()
     {
-        _httpClient = new HttpClient();
+        _httpClient = new HttpClient
+        {
+            Timeout = TimeSpan.FromMinutes(2)
+        };
+
         _httpClient.DefaultRequestHeaders.UserAgent.ParseAdd("Venguard");
     }
 
     public async Task<string> DownloadAsync(
         string destinationDirectory,
+        IProgress<string>? progress = null,
         CancellationToken cancellationToken = default)
     {
         Directory.CreateDirectory(destinationDirectory);
@@ -34,6 +39,8 @@ public sealed class VencordInstallerDownloader
 
         try
         {
+            progress?.Report("Downloading the official Vencord installer...");
+
             var installerBytes = await _httpClient.GetByteArrayAsync(
                 InstallerUrl,
                 cancellationToken);
@@ -43,11 +50,16 @@ public sealed class VencordInstallerDownloader
                 installerBytes,
                 cancellationToken);
 
+            progress?.Report("Downloading the installer checksum...");
+
             var checksums = await _httpClient.GetStringAsync(
                 ChecksumsUrl,
                 cancellationToken);
 
+            progress?.Report("Verifying the Vencord installer...");
+
             var expectedHash = GetExpectedHash(checksums);
+
             var actualHash = await ComputeHashAsync(
                 temporaryPath,
                 cancellationToken);
@@ -65,6 +77,8 @@ public sealed class VencordInstallerDownloader
                 temporaryPath,
                 installerPath,
                 true);
+
+            progress?.Report("Vencord installer verified successfully.");
 
             return installerPath;
         }

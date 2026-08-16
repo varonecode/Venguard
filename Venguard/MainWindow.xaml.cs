@@ -29,6 +29,23 @@ public partial class MainWindow : Window
         RepairButton_Click(this, new RoutedEventArgs());
     }
 
+    private void SetRepairProgress(
+        bool active,
+        string message)
+    {
+        RepairProgressBar.Visibility = active
+            ? Visibility.Visible
+            : Visibility.Collapsed;
+
+        ProgressText.Visibility = active
+            ? Visibility.Visible
+            : Visibility.Collapsed;
+
+        ProgressText.Text = message;
+
+        RepairButton.IsEnabled = !active;
+    }
+
     private void TitleBar_MouseLeftButtonDown(
         object sender,
         MouseButtonEventArgs e)
@@ -92,17 +109,25 @@ public partial class MainWindow : Window
             }
 
             RepairButton.IsEnabled = false;
+            RepairProgressBar.Visibility = Visibility.Visible;
+            ProgressText.Visibility = Visibility.Visible;
+            ProgressText.Text = "Preparing repair...";
             StatusText.Text = "Repairing Vencord...";
 
-            var repairResult = await _repairService.RepairAsync();
+            var progress = new Progress<string>(message =>
+            {
+                ProgressText.Text = message;
+            });
 
-            StatusText.Text = repairResult.Success
-                ? "Vencord is patched"
-                : "Vencord repair failed";
+            var repairResult = await _repairService.RepairAsync(
+                progress);
 
             if (!repairResult.Success)
             {
-                var details = string.IsNullOrWhiteSpace(repairResult.Error)
+                StatusText.Text = "Vencord repair failed";
+
+                var details = string.IsNullOrWhiteSpace(
+                    repairResult.Error)
                     ? repairResult.Output
                     : repairResult.Error;
 
@@ -111,38 +136,32 @@ public partial class MainWindow : Window
                     "Vencord Repair Failed",
                     MessageBoxButton.OK,
                     MessageBoxImage.Error);
+
+                return;
+            }
+
+            StatusText.Text = "Vencord is patched";
+            ProgressText.Text = "Repair completed successfully.";
+
+            if (Application.Current is App app)
+            {
+                app.HandleRepairCompleted(true);
             }
         }
         catch (Exception ex)
         {
-            var path = System.IO.Path.Combine(
-                Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-                "Venguard",
-                "debug.log");
-
-            try
-            {
-                System.IO.Directory.CreateDirectory(
-                    System.IO.Path.GetDirectoryName(path)!);
-
-                System.IO.File.AppendAllText(
-                    path,
-                    $"{DateTime.Now:O} RepairButton_Click{Environment.NewLine}{ex}{Environment.NewLine}{Environment.NewLine}");
-            }
-            catch
-            {
-            }
+            StatusText.Text = "Vencord repair failed";
 
             MessageBox.Show(
                 ex.ToString(),
                 "Venguard Error",
                 MessageBoxButton.OK,
                 MessageBoxImage.Error);
-
-            StatusText.Text = "Vencord repair failed";
         }
         finally
         {
+            RepairProgressBar.Visibility = Visibility.Collapsed;
+            ProgressText.Visibility = Visibility.Collapsed;
             RepairButton.IsEnabled = true;
         }
     }

@@ -17,6 +17,7 @@ public partial class App : Application
     private ConfigService? _configService;
     private VenguardConfig? _config;
     private StartupService _startupService = null!;
+    private DiscordLauncherService _discordLauncher = null!;
     private VencordRepairService _repairService = null!;
     private NotificationService _notificationService = null!;
 
@@ -35,6 +36,8 @@ public partial class App : Application
 
         _startupService = new StartupService();
         _startupService.SetEnabled(_config.AutoStart);
+
+        _discordLauncher = new DiscordLauncherService();
 
         if (_config.IsFirstRun)
         {
@@ -168,6 +171,25 @@ public partial class App : Application
                 _notificationService.ShowRepairNeeded();
             }
         });
+    }
+
+    public void HandleRepairCompleted(bool success)
+    {
+        if (!success)
+        {
+            return;
+        }
+
+        _mainWindow?.UpdateDiscordStatus(
+            new DiscordStatus(
+                true,
+                true,
+                null));
+
+        if (_config?.LaunchDiscordAfterPatch == true)
+        {
+            _discordLauncher.Launch();
+        }
     }
 
     private void ShowMainWindow()
