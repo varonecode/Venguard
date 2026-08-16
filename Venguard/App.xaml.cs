@@ -138,7 +138,7 @@ public partial class App : Application
         _mainWindow.UpdateDiscordStatus(
             _discordMonitor.CurrentStatus);
 
-        _discordMonitor.Start();
+        ApplyMonitorSettings();
 
         _configService.Save(
             _config);
@@ -182,6 +182,33 @@ public partial class App : Application
         _trayIconImage = null;
 
         base.OnExit(e);
+    }
+
+    public void ApplyMonitorSettings()
+    {
+        if (_discordMonitor is null ||
+            _config is null)
+        {
+            return;
+        }
+
+        var interval =
+            TimeSpan.FromSeconds(
+                Math.Max(
+                    5,
+                    _config.MonitorIntervalSeconds));
+
+        _discordMonitor.UpdateInterval(
+            interval);
+
+        if (_config.EnableBackgroundMonitoring)
+        {
+            _discordMonitor.Start();
+        }
+        else
+        {
+            _discordMonitor.Stop();
+        }
     }
 
     public bool TryBeginRepair()

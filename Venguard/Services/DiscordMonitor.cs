@@ -65,6 +65,19 @@ public sealed class DiscordMonitor : IDisposable
         CheckStatus();
     }
 
+    public void UpdateInterval(
+        TimeSpan interval)
+    {
+        _timer.Interval =
+            interval.TotalMilliseconds;
+
+        if (_started)
+        {
+            _timer.Stop();
+            _timer.Start();
+        }
+    }
+
     public void Dispose()
     {
         Stop();

@@ -103,7 +103,7 @@ public sealed class DiscordService
             }
             catch
             {
-                // Treat unreadable archives as not detected.
+                
             }
         }
 

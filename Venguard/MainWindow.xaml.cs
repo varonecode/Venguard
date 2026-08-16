@@ -3,6 +3,7 @@ using System.IO;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using System.Windows.Media;
 using System.Windows.Media.Animation;
 using Venguard.Config;
 using Venguard.Services;
@@ -70,18 +71,37 @@ public partial class MainWindow : Window
             OpenAsarStatusText.Text =
                 "Unavailable";
 
+            VencordStatusDot.Fill =
+                GetBrush("MutedForegroundBrush");
+
             return;
         }
 
+        var isProtected =
+            status.IsVencordPatched;
+
         StatusText.Text =
-            status.IsVencordPatched
+            isProtected
                 ? "Protected"
                 : "Needs repair";
+
+        VencordStatusDot.Fill =
+            isProtected
+                ? GetBrush("SuccessBrush")
+                : GetBrush("WarningBrush");
 
         OpenAsarStatusText.Text =
             status.IsOpenAsar
                 ? "Enabled"
                 : "Disabled";
+    }
+
+    private static SolidColorBrush GetBrush(
+        string key)
+    {
+        return Application.Current.Resources[key]
+            as SolidColorBrush
+            ?? Brushes.Gray;
     }
 
     public void RequestRepair()
@@ -117,8 +137,6 @@ public partial class MainWindow : Window
         DashboardView.Visibility =
             Visibility.Visible;
 
-        DashboardTranslate.X = -12;
-
         DashboardView.Opacity = 0;
 
         SetNavigationState(
@@ -129,9 +147,8 @@ public partial class MainWindow : Window
             SettingsNavButton,
             false);
 
-        DashboardView.BeginStoryboard(
-            (Storyboard)FindResource(
-                "DashboardEnter"));
+        PlayViewFadeIn(
+            DashboardView);
     }
 
     private void ShowSettingsViewInternal()
@@ -142,11 +159,7 @@ public partial class MainWindow : Window
         SettingsView.Visibility =
             Visibility.Visible;
 
-        SettingsTranslate.X =
-            12;
-
-        SettingsView.Opacity =
-            0;
+        SettingsView.Opacity = 0;
 
         SetNavigationState(
             DashboardNavButton,
@@ -156,30 +169,40 @@ public partial class MainWindow : Window
             SettingsNavButton,
             true);
 
-        SettingsView.BeginStoryboard(
-            (Storyboard)FindResource(
-                "SettingsEnter"));
+        PlayViewFadeIn(
+            SettingsView);
+    }
+
+    private void PlayViewFadeIn(
+        FrameworkElement view)
+    {
+        var animation =
+            new DoubleAnimation(
+                0,
+                1,
+                TimeSpan.FromMilliseconds(220))
+            {
+                EasingFunction =
+                    new QuadraticEase
+                    {
+                        EasingMode =
+                            EasingMode.EaseOut
+                    }
+            };
+
+        view.BeginAnimation(
+            UIElement.OpacityProperty,
+            animation);
     }
 
     private static void SetNavigationState(
         Button button,
         bool selected)
     {
-        button.Background =
+        button.Tag =
             selected
-                ? Application.Current.Resources[
-                    "SurfaceSelectedBrush"]
-                    as System.Windows.Media.Brush
-                : System.Windows.Media.Brushes.Transparent;
-
-        button.Foreground =
-            selected
-                ? Application.Current.Resources[
-                    "PurpleBrightBrush"]
-                    as System.Windows.Media.Brush
-                : Application.Current.Resources[
-                    "MutedForegroundBrush"]
-                    as System.Windows.Media.Brush;
+                ? "True"
+                : "False";
     }
 
     private void LoadSettings()
@@ -214,9 +237,15 @@ public partial class MainWindow : Window
         NotifyFailureCheckBox.IsChecked =
             _config.NotifyOnRepairFailure;
 
+        BackgroundMonitoringCheckBox.IsChecked =
+            _config.EnableBackgroundMonitoring;
+
         MonitorIntervalComboBox.SelectedValue =
-            _config.MonitorIntervalSeconds
+            NormalizeMonitorInterval(
+                _config.MonitorIntervalSeconds)
                 .ToString();
+
+        UpdateMonitoringUiState();
 
         TrayStateText.Text =
             _config.CloseToTray
@@ -224,7 +253,7 @@ public partial class MainWindow : Window
                 : "Close button → exit app";
 
         MonitorIntervalText.Text =
-            $"Monitoring every {_config.MonitorIntervalSeconds} seconds";
+            GetMonitorIntervalDescription();
 
         SettingsResultText.Text =
             string.Empty;
@@ -265,6 +294,9 @@ public partial class MainWindow : Window
 
             var newNotifyFailure =
                 NotifyFailureCheckBox.IsChecked == true;
+
+            var newBackgroundMonitoring =
+                BackgroundMonitoringCheckBox.IsChecked == true;
 
             var newInterval =
                 GetSelectedMonitorInterval();
@@ -365,6 +397,9 @@ public partial class MainWindow : Window
             _config.NotifyOnRepairFailure =
                 newNotifyFailure;
 
+            _config.EnableBackgroundMonitoring =
+                newBackgroundMonitoring;
+
             _config.MonitorIntervalSeconds =
                 newInterval;
 
@@ -373,6 +408,11 @@ public partial class MainWindow : Window
 
             _startupService.SetEnabled(
                 _config.AutoStart);
+
+            if (Application.Current is App app)
+            {
+                app.ApplyMonitorSettings();
+            }
 
             UpdateDiscordStatus(
                 _discordService.GetStatus());
@@ -383,7 +423,7 @@ public partial class MainWindow : Window
                     : "Close button → exit app";
 
             MonitorIntervalText.Text =
-                $"Monitoring every {_config.MonitorIntervalSeconds} seconds";
+                GetMonitorIntervalDescription();
 
             SettingsResultText.Text =
                 "Settings saved.";
@@ -516,6 +556,7 @@ public partial class MainWindow : Window
         _config.EnableNotifications = true;
         _config.NotifyOnRepairSuccess = true;
         _config.NotifyOnRepairFailure = true;
+        _config.EnableBackgroundMonitoring = true;
         _config.MonitorIntervalSeconds = 10;
 
         _configService.Save(
@@ -523,6 +564,11 @@ public partial class MainWindow : Window
 
         _startupService.SetEnabled(
             _config.AutoStart);
+
+        if (Application.Current is App app)
+        {
+            app.ApplyMonitorSettings();
+        }
 
         LoadSettings();
 
@@ -590,18 +636,81 @@ public partial class MainWindow : Window
         }
     }
 
+    private void BackgroundMonitoringCheckBox_Changed(
+        object sender,
+        RoutedEventArgs e)
+    {
+        UpdateMonitoringUiState();
+    }
+
+    private void UpdateMonitoringUiState()
+    {
+        var enabled =
+            BackgroundMonitoringCheckBox.IsChecked == true;
+
+        MonitorIntervalComboBox.IsEnabled =
+            enabled;
+
+        MonitorIntervalText.Text =
+            GetMonitorIntervalDescription();
+    }
+
+    private string GetMonitorIntervalDescription()
+    {
+        if (BackgroundMonitoringCheckBox.IsChecked != true)
+        {
+            return "Background monitoring disabled";
+        }
+
+        return _config.MonitorIntervalSeconds switch
+        {
+            60 => "Monitoring every 1 minute",
+            120 => "Monitoring every 2 minutes",
+            300 => "Monitoring every 5 minutes",
+            _ => $"Monitoring every {_config.MonitorIntervalSeconds} seconds"
+        };
+    }
+
+    private static int NormalizeMonitorInterval(
+        int seconds)
+    {
+        int[] validIntervals =
+        {
+            5,
+            10,
+            15,
+            30,
+            60,
+            120,
+            300
+        };
+
+        return validIntervals.Contains(seconds)
+            ? seconds
+            : 10;
+    }
+
     private int GetSelectedMonitorInterval()
     {
-        if (MonitorIntervalComboBox.SelectedItem
-            is ComboBoxItem item &&
+        if (MonitorIntervalComboBox.SelectedValue is string tag &&
             int.TryParse(
-                item.Tag?.ToString(),
+                tag,
                 out var seconds))
         {
             return seconds;
         }
 
-        return 10;
+        if (MonitorIntervalComboBox.SelectedItem
+            is ComboBoxItem item &&
+            int.TryParse(
+                item.Tag?.ToString(),
+                out seconds))
+        {
+            return seconds;
+        }
+
+        return NormalizeMonitorInterval(
+            _config.MonitorIntervalSeconds);
     }
 
     private void DashboardNavButton_Click(

@@ -24,5 +24,7 @@ public sealed class VenguardConfig
 
     public bool NotifyOnRepairFailure { get; set; } = true;
 
+    public bool EnableBackgroundMonitoring { get; set; } = true;
+
     public int MonitorIntervalSeconds { get; set; } = 10;
 }

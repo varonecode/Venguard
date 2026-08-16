@@ -1,4 +1,5 @@
 using System.Windows;
+using System.Windows.Input;
 using Venguard.Config;
 
 namespace Venguard;
@@ -25,6 +26,16 @@ public partial class FirstRunWindow : Window
 
         UseOpenAsarCheckBox.IsChecked =
             _config.UseOpenAsar;
+    }
+
+    private void TitleBar_MouseLeftButtonDown(
+        object sender,
+        MouseButtonEventArgs e)
+    {
+        if (e.ButtonState == MouseButtonState.Pressed)
+        {
+            DragMove();
+        }
     }
 
     private void ContinueButton_Click(
