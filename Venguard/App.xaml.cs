@@ -186,11 +186,11 @@ public partial class App : Application
             return;
         }
 
+        var currentStatus =
+            _discordService.GetStatus();
+
         _mainWindow?.UpdateDiscordStatus(
-            new DiscordStatus(
-                true,
-                true,
-                null));
+            currentStatus);
 
         if (_config?.LaunchDiscordAfterPatch == true)
         {
@@ -362,7 +362,9 @@ public partial class App : Application
             Directory.CreateDirectory(directory);
 
             File.AppendAllText(
-                Path.Combine(directory, "debug.log"),
+                Path.Combine(
+                    directory,
+                    "debug.log"),
                 $"{DateTime.Now:O}{Environment.NewLine}" +
                 $"{source}{Environment.NewLine}" +
                 $"{exception}{Environment.NewLine}" +

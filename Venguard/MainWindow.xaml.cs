@@ -8,25 +8,42 @@ public partial class MainWindow : Window
 {
     private readonly VencordRepairService _repairService;
 
-    public MainWindow(VencordRepairService repairService)
+    public MainWindow(
+        VencordRepairService repairService)
     {
         InitializeComponent();
         _repairService = repairService;
     }
 
-    public void UpdateDiscordStatus(DiscordStatus status)
+    public void UpdateDiscordStatus(
+        DiscordStatus status)
     {
-        StatusText.Text = status switch
+        if (!status.IsInstalled)
         {
-            { IsInstalled: false } => "Discord Stable not found",
-            { IsVencordPatched: true } => "Vencord is patched",
-            _ => "Discord Stable found — Vencord is not patched"
-        };
+            StatusText.Text =
+                "Discord Stable not found";
+
+            OpenAsarStatusText.Text =
+                "OpenAsar: —";
+
+            return;
+        }
+
+        StatusText.Text = status.IsVencordPatched
+            ? "Vencord: Patched"
+            : "Vencord: Not patched";
+
+        OpenAsarStatusText.Text =
+            status.IsOpenAsar
+                ? "OpenAsar: Enabled"
+                : "OpenAsar: Disabled";
     }
 
     public void RequestRepair()
     {
-        RepairButton_Click(this, new RoutedEventArgs());
+        RepairButton_Click(
+            this,
+            new RoutedEventArgs());
     }
 
     private async void RepairButton_Click(
@@ -68,27 +85,40 @@ public partial class MainWindow : Window
             }
 
             RepairButton.IsEnabled = false;
-            RepairProgressBar.Visibility = Visibility.Visible;
-            ProgressText.Visibility = Visibility.Visible;
-            ProgressText.Text = "Preparing repair...";
-            StatusText.Text = "Repairing Vencord...";
+            RepairProgressBar.Visibility =
+                Visibility.Visible;
 
-            var progress = new Progress<string>(message =>
-            {
-                ProgressText.Text = message;
-            });
+            ProgressText.Visibility =
+                Visibility.Visible;
 
-            var repairResult = await _repairService.RepairAsync(
-                progress);
+            ProgressText.Text =
+                "Preparing repair...";
+
+            StatusText.Text =
+                "Repairing Vencord...";
+
+            var progress =
+                new Progress<string>(
+                    message =>
+                    {
+                        ProgressText.Text =
+                            message;
+                    });
+
+            var repairResult =
+                await _repairService.RepairAsync(
+                    progress);
 
             if (!repairResult.Success)
             {
-                StatusText.Text = "Vencord repair failed";
+                StatusText.Text =
+                    "Vencord repair failed";
 
-                var details = string.IsNullOrWhiteSpace(
-                    repairResult.Error)
-                    ? repairResult.Output
-                    : repairResult.Error;
+                var details =
+                    string.IsNullOrWhiteSpace(
+                        repairResult.Error)
+                        ? repairResult.Output
+                        : repairResult.Error;
 
                 MessageBox.Show(
                     $"{repairResult.Message}\n\n{details}",
@@ -99,14 +129,18 @@ public partial class MainWindow : Window
                 return;
             }
 
-            StatusText.Text = "Vencord is patched";
-            ProgressText.Text = "Repair completed successfully.";
+            StatusText.Text =
+                "Vencord: Patched";
+
+            ProgressText.Text =
+                "Repair completed successfully.";
 
             app.CompleteRepair(true);
         }
         catch (Exception ex)
         {
-            StatusText.Text = "Vencord repair failed";
+            StatusText.Text =
+                "Vencord repair failed";
 
             MessageBox.Show(
                 ex.ToString(),
@@ -118,8 +152,12 @@ public partial class MainWindow : Window
         {
             app.CompleteRepair(false);
 
-            RepairProgressBar.Visibility = Visibility.Collapsed;
-            ProgressText.Visibility = Visibility.Collapsed;
+            RepairProgressBar.Visibility =
+                Visibility.Collapsed;
+
+            ProgressText.Visibility =
+                Visibility.Collapsed;
+
             RepairButton.IsEnabled = true;
         }
     }
@@ -160,8 +198,9 @@ public partial class MainWindow : Window
 
     private void ToggleMaximize()
     {
-        WindowState = WindowState == WindowState.Maximized
-            ? WindowState.Normal
-            : WindowState.Maximized;
+        WindowState =
+            WindowState == WindowState.Maximized
+                ? WindowState.Normal
+                : WindowState.Maximized;
     }
 }
