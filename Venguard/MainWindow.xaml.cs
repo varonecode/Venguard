@@ -24,7 +24,14 @@ public partial class MainWindow : Window
         };
     }
 
-    private void TitleBar_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+    public void RequestRepair()
+    {
+        RepairButton_Click(this, new RoutedEventArgs());
+    }
+
+    private void TitleBar_MouseLeftButtonDown(
+        object sender,
+        MouseButtonEventArgs e)
     {
         if (e.ClickCount == 2)
         {
@@ -35,22 +42,30 @@ public partial class MainWindow : Window
         DragMove();
     }
 
-    private void MinimizeButton_Click(object sender, RoutedEventArgs e)
+    private void MinimizeButton_Click(
+        object sender,
+        RoutedEventArgs e)
     {
         Hide();
     }
 
-    private void MaximizeButton_Click(object sender, RoutedEventArgs e)
+    private void MaximizeButton_Click(
+        object sender,
+        RoutedEventArgs e)
     {
         ToggleMaximize();
     }
 
-    private void CloseButton_Click(object sender, RoutedEventArgs e)
+    private void CloseButton_Click(
+        object sender,
+        RoutedEventArgs e)
     {
         Hide();
     }
 
-    private async void RepairButton_Click(object sender, RoutedEventArgs e)
+    private async void RepairButton_Click(
+        object sender,
+        RoutedEventArgs e)
     {
         try
         {

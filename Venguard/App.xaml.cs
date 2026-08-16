@@ -2,6 +2,7 @@
 using System.IO;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Threading;
 using Hardcodet.Wpf.TaskbarNotification;
 using Venguard.Config;
 using Venguard.Services;
@@ -60,6 +61,7 @@ public partial class App : Application
             installerService);
 
         _notificationService = new NotificationService();
+        _notificationService.Activated += Notification_Activated;
 
         _mainWindow = new MainWindow(_repairService);
 
@@ -112,9 +114,45 @@ public partial class App : Application
             _discordMonitor.Dispose();
         }
 
+        _notificationService.Activated -= Notification_Activated;
+
         _trayIcon?.Dispose();
 
         base.OnExit(e);
+    }
+
+    private void Notification_Activated(
+        object? sender,
+        string arguments)
+    {
+        var normalized = arguments;
+
+        for (var i = 0; i < 3; i++)
+        {
+            var decoded = Uri.UnescapeDataString(normalized);
+
+            if (decoded == normalized)
+            {
+                break;
+            }
+
+            normalized = decoded;
+        }
+
+        if (!normalized.Contains(
+                "repair",
+                StringComparison.OrdinalIgnoreCase))
+        {
+            return;
+        }
+
+        Dispatcher.BeginInvoke(
+            DispatcherPriority.Normal,
+            new Action(() =>
+            {
+                ShowMainWindow();
+                _mainWindow?.RequestRepair();
+            }));
     }
 
     private void DiscordMonitor_StatusChanged(
@@ -151,9 +189,11 @@ public partial class App : Application
 
     private void App_DispatcherUnhandledException(
         object sender,
-        System.Windows.Threading.DispatcherUnhandledExceptionEventArgs e)
+        DispatcherUnhandledExceptionEventArgs e)
     {
-        LogException("DispatcherUnhandledException", e.Exception);
+        LogException(
+            "DispatcherUnhandledException",
+            e.Exception);
 
         MessageBox.Show(
             e.Exception.ToString(),
@@ -170,11 +210,15 @@ public partial class App : Application
     {
         if (e.ExceptionObject is Exception exception)
         {
-            LogException("UnhandledException", exception);
+            LogException(
+                "UnhandledException",
+                exception);
         }
     }
 
-    private static void LogException(string source, Exception exception)
+    private static void LogException(
+        string source,
+        Exception exception)
     {
         try
         {
@@ -184,11 +228,11 @@ public partial class App : Application
 
             Directory.CreateDirectory(directory);
 
-            var path = Path.Combine(directory, "debug.log");
-
             File.AppendAllText(
-                path,
-                $"{DateTime.Now:O} {source}{Environment.NewLine}{exception}{Environment.NewLine}{Environment.NewLine}");
+                Path.Combine(directory, "debug.log"),
+                $"{DateTime.Now:O}{Environment.NewLine}" +
+                $"{source}{Environment.NewLine}" +
+                $"{exception}{Environment.NewLine}{Environment.NewLine}");
         }
         catch
         {

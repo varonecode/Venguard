@@ -4,11 +4,15 @@ namespace Venguard.Services;
 
 public sealed class NotificationService
 {
+    public event EventHandler<string>? Activated;
+
     public NotificationService()
     {
         Toast.Initialize(
             appId: "Venguard",
             displayName: "Venguard");
+
+        Toast.Activated += Toast_Activated;
     }
 
     public void ShowRepairNeeded()
@@ -19,11 +23,12 @@ public sealed class NotificationService
             new ToastOptions
             {
                 PrimaryButton = ("Repair", "repair"),
-                SecondaryButton = ("Dismiss", "dismiss"),
-                Payload = new Dictionary<string, string>
-                {
-                    ["action"] = "repair"
-                }
+                SecondaryButton = ("Dismiss", "dismiss")
             });
+    }
+
+    private void Toast_Activated(ToastActivationArgs args)
+    {
+        Activated?.Invoke(this, args.Arguments);
     }
 }
