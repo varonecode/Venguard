@@ -1,0 +1,92 @@
+<Window x:Class="Venguard.FirstRunWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:shell="clr-namespace:System.Windows.Shell;assembly=PresentationFramework"
+        Title="Venguard Setup"
+        Width="620"
+        Height="520"
+        MinWidth="620"
+        MinHeight="520"
+        Background="{StaticResource WindowBackgroundBrush}"
+        Foreground="{StaticResource ForegroundBrush}"
+        WindowStyle="None"
+        ResizeMode="NoResize">
+
+    <shell:WindowChrome.WindowChrome>
+        <shell:WindowChrome CaptionHeight="0"
+                            ResizeBorderThickness="0"
+                            GlassFrameThickness="0"
+                            UseAeroCaptionButtons="False"/>
+    </shell:WindowChrome.WindowChrome>
+
+    <Border Background="{StaticResource WindowBackgroundBrush}"
+            BorderBrush="#333333"
+            BorderThickness="1">
+
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="44"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="72"/>
+            </Grid.RowDefinitions>
+
+            <Border Grid.Row="0"
+                    Background="{StaticResource TitleBarBrush}"
+                    MouseLeftButtonDown="TitleBar_MouseLeftButtonDown">
+
+                <Grid>
+                    <TextBlock Margin="16,0,0,0"
+                               VerticalAlignment="Center"
+                               FontSize="14"
+                               FontWeight="SemiBold"
+                               Text="Venguard Setup"/>
+                </Grid>
+            </Border>
+
+            <StackPanel Grid.Row="1"
+                        Margin="48,36">
+
+                <TextBlock FontSize="30"
+                           FontWeight="SemiBold"
+                           Text="Welcome to Venguard"/>
+
+                <TextBlock Margin="0,12,0,28"
+                           FontSize="15"
+                           TextWrapping="Wrap"
+                           Opacity="0.75"
+                           Text="Venguard keeps Vencord patched on Discord Stable and can repair the patch after Discord updates."/>
+
+                <TextBlock FontSize="16"
+                           FontWeight="SemiBold"
+                           Text="Preferences"/>
+
+                <CheckBox x:Name="AutoStartCheckBox"
+                          Margin="0,20,0,0"
+                          FontSize="14"
+                          Content="Start Venguard with Windows"/>
+
+                <CheckBox x:Name="LaunchDiscordCheckBox"
+                          Margin="0,16,0,0"
+                          FontSize="14"
+                          IsChecked="True"
+                          Content="Launch Discord after a successful repair"/>
+
+                <CheckBox x:Name="OpenAsarCheckBox"
+                          Margin="0,16,0,0"
+                          FontSize="14"
+                          Content="Use OpenAsar when available"/>
+            </StackPanel>
+
+            <Border Grid.Row="2"
+                    Background="{StaticResource TitleBarBrush}">
+
+                <Button Width="120"
+                        Height="38"
+                        HorizontalAlignment="Right"
+                        Margin="0,0,24,0"
+                        Click="ContinueButton_Click"
+                        Content="Continue"/>
+            </Border>
+        </Grid>
+    </Border>
+</Window>

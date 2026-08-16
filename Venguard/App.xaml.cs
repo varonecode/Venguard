@@ -23,6 +23,14 @@ public partial class App : Application
         _config = _configService.Load();
         if (_config.IsFirstRun)
         {
+            var wizard = new FirstRunWindow(_config);
+
+            if (wizard.ShowDialog() != true)
+            {
+                Shutdown();
+                return;
+            }
+
             _config.IsFirstRun = false;
             _configService.Save(_config);
         }
