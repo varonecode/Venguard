@@ -21,8 +21,13 @@ public partial class App : Application
 
         _configService = new ConfigService();
         _config = _configService.Load();
+        if (_config.IsFirstRun)
+        {
+            _config.IsFirstRun = false;
+            _configService.Save(_config);
+        }
 
-        _mainWindow = new MainWindow();
+         _mainWindow = new MainWindow();
 
         var menu = new ContextMenu();
 
