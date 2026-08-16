@@ -17,6 +17,7 @@ public partial class App : Application
     private VenguardConfig? _config;
     private StartupService _startupService = null!;
     private VencordRepairService _repairService = null!;
+    private NotificationService _notificationService = null!;
 
     public App()
     {
@@ -57,6 +58,8 @@ public partial class App : Application
             discordService,
             installerManager,
             installerService);
+
+        _notificationService = new NotificationService();
 
         _mainWindow = new MainWindow(_repairService);
 
@@ -121,6 +124,11 @@ public partial class App : Application
         Dispatcher.Invoke(() =>
         {
             _mainWindow?.UpdateDiscordStatus(status);
+
+            if (status.IsInstalled && !status.IsVencordPatched)
+            {
+                _notificationService.ShowRepairNeeded();
+            }
         });
     }
 

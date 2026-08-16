@@ -11,7 +11,9 @@ public sealed class DiscordMonitor : IDisposable
 
     public event EventHandler<DiscordStatus>? StatusChanged;
 
-    public DiscordMonitor(DiscordService discordService, TimeSpan interval)
+    public DiscordMonitor(
+        DiscordService discordService,
+        TimeSpan interval)
     {
         _discordService = discordService;
         CurrentStatus = _discordService.GetStatus();
