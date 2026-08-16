@@ -1,3 +1,5 @@
+<img width="1024" height="1024" alt="Gemini_Generated_Image_i85xn6i85xn6i85x" src="https://github.com/user-attachments/assets/752544c1-f39f-40b3-be0b-84722669241c" />
+
 # Venguard
 
 Venguard is a Windows utility for maintaining Vencord installations. It monitors Discord, detects when Vencord has been corrupted or removed, and can automatically repair the installation using the official Vencord installer.
