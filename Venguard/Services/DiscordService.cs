@@ -13,18 +13,13 @@ public sealed class DiscordService
             "Discord");
     }
 
-    public bool IsDiscordInstalled()
-    {
-        return GetDiscordVersionPath() is not null;
-    }
-
-    public bool IsVencordPatched()
+    public DiscordStatus GetStatus()
     {
         var versionPath = GetDiscordVersionPath();
 
         if (versionPath is null)
         {
-            return false;
+            return new DiscordStatus(false, false, null);
         }
 
         var appAsarPath = Path.Combine(
@@ -32,12 +27,10 @@ public sealed class DiscordService
             "resources",
             "_app.asar");
 
-        return File.Exists(appAsarPath);
-    }
-
-    public string? GetInstallationPath()
-    {
-        return GetDiscordVersionPath();
+        return new DiscordStatus(
+            true,
+            File.Exists(appAsarPath),
+            versionPath);
     }
 
     private string? GetDiscordVersionPath()
