@@ -14,6 +14,7 @@ public partial class App : Application
     private DiscordMonitor? _discordMonitor;
     private ConfigService? _configService;
     private VenguardConfig? _config;
+    private StartupService? _startupService;
 
     protected override void OnStartup(StartupEventArgs e)
     {
@@ -21,6 +22,10 @@ public partial class App : Application
 
         _configService = new ConfigService();
         _config = _configService.Load();
+
+        _startupService = new StartupService();
+        _startupService.SetEnabled(_config.AutoStart);
+
         if (_config.IsFirstRun)
         {
             var wizard = new FirstRunWindow(_config);
