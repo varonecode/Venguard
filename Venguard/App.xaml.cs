@@ -13,6 +13,7 @@ public partial class App : Application
 {
     private TaskbarIcon? _trayIcon;
     private MainWindow? _mainWindow;
+    private SettingsWindow? _settingsWindow;
     private DiscordMonitor? _discordMonitor;
     private ConfigService? _configService;
     private VenguardConfig? _config;
@@ -53,11 +54,14 @@ public partial class App : Application
 
             _config.IsFirstRun = false;
             _configService.Save(_config);
+
+            _startupService.SetEnabled(_config.AutoStart);
         }
 
         var discordService = new DiscordService();
         var installerDownloader = new VencordInstallerDownloader();
-        var installerManager = new VencordInstallerManager(installerDownloader);
+        var installerManager =
+            new VencordInstallerManager(installerDownloader);
         var installerService = new VencordInstallerService();
 
         _repairService = new VencordRepairService(
@@ -79,6 +83,13 @@ public partial class App : Application
 
         openItem.Click += (_, _) => ShowMainWindow();
 
+        var settingsItem = new MenuItem
+        {
+            Header = "Settings"
+        };
+
+        settingsItem.Click += (_, _) => ShowSettingsWindow();
+
         var exitItem = new MenuItem
         {
             Header = "Exit Venguard"
@@ -87,6 +98,7 @@ public partial class App : Application
         exitItem.Click += (_, _) => Shutdown();
 
         menu.Items.Add(openItem);
+        menu.Items.Add(settingsItem);
         menu.Items.Add(new Separator());
         menu.Items.Add(exitItem);
 
@@ -101,10 +113,12 @@ public partial class App : Application
             discordService,
             TimeSpan.FromSeconds(10));
 
-        _discordMonitor.StatusChanged += DiscordMonitor_StatusChanged;
+        _discordMonitor.StatusChanged +=
+            DiscordMonitor_StatusChanged;
 
         _mainWindow.Show();
-        _mainWindow.UpdateDiscordStatus(_discordMonitor.CurrentStatus);
+        _mainWindow.UpdateDiscordStatus(
+            _discordMonitor.CurrentStatus);
 
         _discordMonitor.Start();
 
@@ -115,7 +129,9 @@ public partial class App : Application
     {
         if (_discordMonitor is not null)
         {
-            _discordMonitor.StatusChanged -= DiscordMonitor_StatusChanged;
+            _discordMonitor.StatusChanged -=
+                DiscordMonitor_StatusChanged;
+
             _discordMonitor.Dispose();
         }
 
@@ -166,7 +182,8 @@ public partial class App : Application
 
         for (var i = 0; i < 3; i++)
         {
-            var decoded = Uri.UnescapeDataString(normalized);
+            var decoded =
+                Uri.UnescapeDataString(normalized);
 
             if (decoded == normalized)
             {
@@ -210,7 +227,8 @@ public partial class App : Application
                 return;
             }
 
-            if (status.IsInstalled && !status.IsVencordPatched)
+            if (status.IsInstalled &&
+                !status.IsVencordPatched)
             {
                 _notificationService.ShowRepairNeeded();
             }
@@ -226,12 +244,49 @@ public partial class App : Application
 
         _mainWindow.Show();
 
-        if (_mainWindow.WindowState == WindowState.Minimized)
+        if (_mainWindow.WindowState ==
+            WindowState.Minimized)
         {
-            _mainWindow.WindowState = WindowState.Normal;
+            _mainWindow.WindowState =
+                WindowState.Normal;
         }
 
         _mainWindow.Activate();
+    }
+
+    private void ShowSettingsWindow()
+    {
+        if (_config is null)
+        {
+            return;
+        }
+
+        if (_settingsWindow is not null)
+        {
+            _settingsWindow.Activate();
+            return;
+        }
+
+        _settingsWindow = new SettingsWindow(_config)
+        {
+            Owner = _mainWindow
+        };
+
+        try
+        {
+            var result = _settingsWindow.ShowDialog();
+
+            if (result == true)
+            {
+                _configService!.Save(_config);
+                _startupService.SetEnabled(
+                    _config.AutoStart);
+            }
+        }
+        finally
+        {
+            _settingsWindow = null;
+        }
     }
 
     private void App_DispatcherUnhandledException(
@@ -270,7 +325,8 @@ public partial class App : Application
         try
         {
             var directory = Path.Combine(
-                Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+                Environment.GetFolderPath(
+                    Environment.SpecialFolder.ApplicationData),
                 "Venguard");
 
             Directory.CreateDirectory(directory);
@@ -279,7 +335,8 @@ public partial class App : Application
                 Path.Combine(directory, "debug.log"),
                 $"{DateTime.Now:O}{Environment.NewLine}" +
                 $"{source}{Environment.NewLine}" +
-                $"{exception}{Environment.NewLine}{Environment.NewLine}");
+                $"{exception}{Environment.NewLine}" +
+                $"{Environment.NewLine}");
         }
         catch
         {
