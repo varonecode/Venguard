@@ -2,6 +2,7 @@
 using System.Windows;
 using System.Windows.Controls;
 using Hardcodet.Wpf.TaskbarNotification;
+using Venguard.Services;
 
 namespace Venguard;
 
@@ -9,6 +10,7 @@ public partial class App : Application
 {
     private TaskbarIcon? _trayIcon;
     private MainWindow? _mainWindow;
+    private DiscordMonitor? _discordMonitor;
 
     protected override void OnStartup(StartupEventArgs e)
     {
@@ -43,13 +45,41 @@ public partial class App : Application
             ContextMenu = menu
         };
 
+        var discordService = new DiscordService();
+
+        _discordMonitor = new DiscordMonitor(
+            discordService,
+            TimeSpan.FromSeconds(10));
+
+        _discordMonitor.StatusChanged += DiscordMonitor_StatusChanged;
+
         _mainWindow.Show();
+        _mainWindow.UpdateDiscordStatus(_discordMonitor.CurrentStatus);
+
+        _discordMonitor.Start();
     }
 
     protected override void OnExit(ExitEventArgs e)
     {
+        if (_discordMonitor is not null)
+        {
+            _discordMonitor.StatusChanged -= DiscordMonitor_StatusChanged;
+            _discordMonitor.Dispose();
+        }
+
         _trayIcon?.Dispose();
+
         base.OnExit(e);
+    }
+
+    private void DiscordMonitor_StatusChanged(
+        object? sender,
+        DiscordStatus status)
+    {
+        Dispatcher.Invoke(() =>
+        {
+            _mainWindow?.UpdateDiscordStatus(status);
+        });
     }
 
     private void ShowMainWindow()

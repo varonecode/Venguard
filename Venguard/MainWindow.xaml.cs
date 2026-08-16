@@ -6,20 +6,13 @@ namespace Venguard;
 
 public partial class MainWindow : Window
 {
-    private readonly DiscordService _discordService;
-
     public MainWindow()
     {
         InitializeComponent();
-
-        _discordService = new DiscordService();
-        UpdateDiscordStatus();
     }
 
-    private void UpdateDiscordStatus()
+    public void UpdateDiscordStatus(DiscordStatus status)
     {
-        var status = _discordService.GetStatus();
-
         StatusText.Text = status switch
         {
             { IsInstalled: false } => "Discord Stable not found",
